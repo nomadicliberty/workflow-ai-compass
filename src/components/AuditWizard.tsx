@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AuditQuestion, AuditAnswer, AuditReport } from '../types/audit';
 import { auditQuestions, generateAuditReport } from '../data/auditQuestions';
@@ -10,6 +9,7 @@ import EmailCollectionForm from './EmailCollectionForm';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { sendReportEmail } from '../services/emailService';
 
 const AuditWizard: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(-1); // -1 for welcome screen, 0-n for questions
@@ -73,13 +73,25 @@ const AuditWizard: React.FC = () => {
       const generatedReport = generateAuditReport(answers);
       setReport(generatedReport);
       
-      // In a real app, send email here
-      await sendReportEmail(email, generatedReport);
-      
-      toast({
-        title: "Report Sent!",
-        description: "Your personalized workflow audit has been sent to your email.",
+      // Send email using the email service
+      const emailSent = await sendReportEmail({
+        userEmail: email,
+        report: generatedReport,
+        bccEmail: "your-email@example.com" // Replace with your email
       });
+      
+      if (emailSent) {
+        toast({
+          title: "Report Sent!",
+          description: "Your personalized workflow audit has been sent to your email.",
+        });
+      } else {
+        toast({
+          title: "Email Delivery Issue",
+          description: "We generated your report but had trouble sending the email. You can still view it here.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("Error generating or sending report:", error);
       toast({
@@ -91,17 +103,6 @@ const AuditWizard: React.FC = () => {
       setIsGeneratingReport(false);
       setShowEmailForm(false);
     }
-  };
-  
-  const sendReportEmail = async (email: string, report: AuditReport) => {
-    // In a real implementation, this would be an API call to a backend
-    console.log(`Sending report to ${email} and BCC to your-email@example.com`);
-    console.log("Report content:", report);
-    
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(resolve, 1500);
-    });
   };
 
   // Check if current question has been answered
