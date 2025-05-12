@@ -21,7 +21,7 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail })
   const handleDownload = () => {
     // Create a formatted report for download
     const reportContent = `
-      Workflow AI Audit Results
+      Nomadic Liberty LLC - Workflow AI Audit Results
       -------------------------
       Overall Rating: ${report.overallRating} (${report.overallScore}/100)
       Estimated Weekly Time Savings: ${report.totalTimeSavings}
@@ -39,13 +39,15 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail })
       ${report.topRecommendations.map((rec, i) => `${i+1}. ${rec}`).join('\n      ')}
       
       Book a free discovery call: https://calendly.com/workflow-ai/discovery
+      
+      © ${new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.
     `;
     
     // Create a download link
     const element = document.createElement("a");
     const file = new Blob([reportContent], {type: 'text/plain'});
     element.href = URL.createObjectURL(file);
-    element.download = "workflow_ai_audit_report.txt";
+    element.download = "nomadic_liberty_workflow_audit_report.txt";
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -192,7 +194,7 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail })
       <div className="mb-8 bg-workflow-purple bg-opacity-20 p-6 rounded-lg border border-workflow-purple flex flex-col md:flex-row justify-between items-center">
         <div>
           <h3 className="text-xl font-semibold mb-2">Need help implementing these solutions?</h3>
-          <p className="text-gray-600">Schedule a free 30-minute discovery call with our automation experts</p>
+          <p className="text-gray-600">Schedule a free 30-minute discovery call with our automation experts at Nomadic Liberty LLC</p>
         </div>
         <Button 
           onClick={handleBookCall}
@@ -258,6 +260,9 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail })
           <RotateCcw className="mr-2 h-4 w-4" />
           Start New Audit
         </Button>
+        <p className="text-xs text-gray-500 mt-4">
+          © {new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.
+        </p>
       </div>
     </div>
   );

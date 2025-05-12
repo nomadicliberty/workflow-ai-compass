@@ -47,7 +47,7 @@ const Index = () => {
               </p>
             </div>
             <div className="text-sm text-gray-500">
-              © {new Date().getFullYear()} Workflow AI. All rights reserved.
+              © {new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.
             </div>
           </div>
         </footer>
