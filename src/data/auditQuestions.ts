@@ -165,6 +165,30 @@ const getRatingFromScore = (score: number): RatingLevel => {
   return 'Fully Automated';
 };
 
+// Calculate estimated time savings based on score and category
+const calculateTimeSavings = (category: WorkflowCategory, score: number): string => {
+  // Base values in hours per week
+  const baseSavings = {
+    'task-management': 4,
+    'customer-communication': 5,
+    'data-entry': 6,
+    'scheduling': 3,
+    'reporting': 4,
+    'general': 2
+  };
+  
+  // Higher score = more potential time savings from automation
+  const potentialFactor = score / 100;
+  
+  // Low score means more time savings potential because there's more to automate
+  const inverseFactor = 1 - (potentialFactor * 0.7);
+  
+  // Calculate hours saved (more manual = more potential hours saved)
+  const hoursSaved = Math.round(baseSavings[category] * inverseFactor * 10) / 10;
+  
+  return `${hoursSaved} hours/week`;
+};
+
 // Tools and improvement suggestions for each category based on automation level
 const recommendationsByCategory: Record<WorkflowCategory, {
   manual: { tools: string[], improvements: string[] },
@@ -353,7 +377,8 @@ export const generateCategoryAssessment = (
       rating: 'Manual',
       score: 0,
       tools: recommendationsByCategory[category]['manual'].tools,
-      improvements: recommendationsByCategory[category]['manual'].improvements
+      improvements: recommendationsByCategory[category]['manual'].improvements,
+      timeSavings: '0 hours/week' // Adding missing timeSavings property
     };
   }
   
@@ -375,15 +400,18 @@ export const generateCategoryAssessment = (
   });
   
   const averageScore = countedAnswers > 0 ? totalScore / countedAnswers : 0;
-  const rating = getRatingFromScore(averageScore);
+  const roundedScore = Math.round(averageScore);
+  const rating = getRatingFromScore(roundedScore);
   const { tools, improvements } = getRecommendations(category, rating);
+  const timeSavings = calculateTimeSavings(category, roundedScore);
   
   return {
     category,
     rating,
-    score: Math.round(averageScore),
+    score: roundedScore,
     tools,
-    improvements
+    improvements,
+    timeSavings // Adding the missing timeSavings property
   };
 };
 
@@ -404,7 +432,14 @@ export const generateAuditReport = (answers: AuditAnswer[]): AuditReport => {
   // Calculate overall score and rating
   const totalScore = categoryAssessments.reduce((sum, assessment) => sum + assessment.score, 0);
   const averageScore = totalScore / categoryAssessments.length;
-  const overallRating = getRatingFromScore(averageScore);
+  const overallRating = getRatingFromScore(Math.round(averageScore));
+  
+  // Calculate total time savings across all categories
+  const totalHours = categoryAssessments.reduce((sum, assessment) => {
+    const hours = parseFloat(assessment.timeSavings.split(' ')[0]);
+    return sum + hours;
+  }, 0);
+  const totalTimeSavings = `${Math.round(totalHours * 10) / 10} hours/week`;
   
   // Get top recommendations across all categories
   // Prioritize recommendations from lower-rated areas
@@ -419,6 +454,7 @@ export const generateAuditReport = (answers: AuditAnswer[]): AuditReport => {
     categories: categoryAssessments,
     overallRating,
     overallScore: Math.round(averageScore),
-    topRecommendations
+    topRecommendations,
+    totalTimeSavings // Adding the missing totalTimeSavings property
   };
 };
