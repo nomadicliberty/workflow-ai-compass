@@ -5,16 +5,17 @@ import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Download, RotateCcw, Mail } from 'lucide-react';
+import { Download, RotateCcw, Mail, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ReportViewProps {
   report: AuditReport;
   onRestart: () => void;
+  userEmail?: string;
 }
 
-const ReportView: React.FC<ReportViewProps> = ({ report, onRestart }) => {
-  const [emailInput, setEmailInput] = useState('');
+const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail }) => {
+  const [emailInput, setEmailInput] = useState(userEmail || '');
   const { toast } = useToast();
   
   const handleDownload = () => {
@@ -23,10 +24,12 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart }) => {
       Workflow AI Audit Results
       -------------------------
       Overall Rating: ${report.overallRating} (${report.overallScore}/100)
+      Estimated Weekly Time Savings: ${report.totalTimeSavings}
       
       Category Assessments:
       ${report.categories.map(category => `
         * ${categoryLabels[category.category]}: ${category.rating} (${category.score}/100)
+          Estimated Time Savings: ${category.timeSavings}
           Recommended Tools: ${category.tools.join(', ')}
           Suggested Improvements:
           ${category.improvements.map(imp => `- ${imp}`).join('\n          ')}
@@ -34,6 +37,8 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart }) => {
       
       Top Recommendations:
       ${report.topRecommendations.map((rec, i) => `${i+1}. ${rec}`).join('\n      ')}
+      
+      Book a free discovery call: https://calendly.com/workflow-ai/discovery
     `;
     
     // Create a download link
@@ -51,8 +56,19 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart }) => {
     });
   };
   
+  const handleBookCall = () => {
+    // In a real app, this would open the booking calendar
+    window.open('https://calendly.com/workflow-ai/discovery', '_blank');
+    
+    toast({
+      title: "Opening booking calendar",
+      description: "You'll be able to schedule a free discovery call with our team.",
+    });
+  };
+  
   const handleSendEmail = (e: React.FormEvent) => {
     e.preventDefault();
+    
     // In a real app, this would connect to an email service
     toast({
       title: "Report sent!",
@@ -85,6 +101,11 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart }) => {
               ></div>
             </div>
             <p className="text-right text-sm text-gray-500 mt-1">{assessment.score}/100</p>
+          </div>
+          
+          <div className="mb-4">
+            <h4 className="font-medium mb-2">Estimated Time Savings:</h4>
+            <p className="text-green-600 font-medium">{assessment.timeSavings}</p>
           </div>
           
           <div className="mb-4">
@@ -143,6 +164,14 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart }) => {
           
           <p className="text-gray-700 mb-4">{ratingDescriptions[report.overallRating]}</p>
           
+          <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-6">
+            <h3 className="text-lg font-semibold text-green-800 mb-2">Estimated Time Savings</h3>
+            <p className="text-green-700 font-bold text-xl">{report.totalTimeSavings}</p>
+            <p className="text-green-600 text-sm mt-1">
+              by implementing the recommended automation solutions
+            </p>
+          </div>
+          
           <div className="mt-6">
             <h3 className="text-xl font-semibold mb-3">Top Recommendations</h3>
             <ul className="space-y-3">
@@ -159,11 +188,26 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart }) => {
         </CardContent>
       </Card>
       
+      {/* Book a Call Button */}
+      <div className="mb-8 bg-workflow-purple bg-opacity-20 p-6 rounded-lg border border-workflow-purple flex flex-col md:flex-row justify-between items-center">
+        <div>
+          <h3 className="text-xl font-semibold mb-2">Need help implementing these solutions?</h3>
+          <p className="text-gray-600">Schedule a free 30-minute discovery call with our automation experts</p>
+        </div>
+        <Button 
+          onClick={handleBookCall}
+          className="mt-4 md:mt-0 bg-workflow-purpleDark hover:bg-purple-700"
+        >
+          <Calendar className="mr-2 h-4 w-4" />
+          Book a Free Call
+        </Button>
+      </div>
+      
       {/* Detailed Category Results */}
       <h2 className="text-2xl font-semibold mb-4">Detailed Results</h2>
       
       <Tabs defaultValue={report.categories[0].category}>
-        <TabsList className="mb-4 grid grid-cols-2 md:grid-cols-5">
+        <TabsList className="mb-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
           {report.categories.map((category) => (
             <TabsTrigger key={category.category} value={category.category}>
               {categoryLabels[category.category]}

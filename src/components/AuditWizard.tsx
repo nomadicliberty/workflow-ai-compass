@@ -6,14 +6,19 @@ import QuestionCard from './QuestionCard';
 import ProgressBar from './ProgressBar';
 import ReportView from './ReportView';
 import WelcomeScreen from './WelcomeScreen';
+import EmailCollectionForm from './EmailCollectionForm';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const AuditWizard: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(-1); // -1 for welcome screen, 0-n for questions
   const [answers, setAnswers] = useState<AuditAnswer[]>([]);
   const [report, setReport] = useState<AuditReport | null>(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const { toast } = useToast();
 
   const totalSteps = auditQuestions.length;
 
@@ -25,13 +30,8 @@ const AuditWizard: React.FC = () => {
     if (currentStep < totalSteps - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Generate report
-      setIsGeneratingReport(true);
-      setTimeout(() => {
-        const generatedReport = generateAuditReport(answers);
-        setReport(generatedReport);
-        setIsGeneratingReport(false);
-      }, 1500); // Simulate processing time
+      // Show email collection form
+      setShowEmailForm(true);
     }
   };
 
@@ -60,6 +60,48 @@ const AuditWizard: React.FC = () => {
     setCurrentStep(-1);
     setAnswers([]);
     setReport(null);
+    setUserEmail('');
+    setShowEmailForm(false);
+  };
+
+  const handleEmailSubmit = async (email: string) => {
+    setUserEmail(email);
+    setIsGeneratingReport(true);
+    
+    try {
+      // Generate report
+      const generatedReport = generateAuditReport(answers);
+      setReport(generatedReport);
+      
+      // In a real app, send email here
+      await sendReportEmail(email, generatedReport);
+      
+      toast({
+        title: "Report Sent!",
+        description: "Your personalized workflow audit has been sent to your email.",
+      });
+    } catch (error) {
+      console.error("Error generating or sending report:", error);
+      toast({
+        title: "Something went wrong",
+        description: "There was an error generating your report. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingReport(false);
+      setShowEmailForm(false);
+    }
+  };
+  
+  const sendReportEmail = async (email: string, report: AuditReport) => {
+    // In a real implementation, this would be an API call to a backend
+    console.log(`Sending report to ${email} and BCC to your-email@example.com`);
+    console.log("Report content:", report);
+    
+    // Simulate API call
+    return new Promise((resolve) => {
+      setTimeout(resolve, 1500);
+    });
   };
 
   // Check if current question has been answered
@@ -72,6 +114,10 @@ const AuditWizard: React.FC = () => {
   const renderContent = () => {
     if (currentStep === -1) {
       return <WelcomeScreen onStart={handleStartAudit} />;
+    }
+
+    if (showEmailForm) {
+      return <EmailCollectionForm onSubmit={handleEmailSubmit} isLoading={isGeneratingReport} />;
     }
 
     if (isGeneratingReport) {
@@ -87,7 +133,7 @@ const AuditWizard: React.FC = () => {
     }
 
     if (report) {
-      return <ReportView report={report} onRestart={handleRestartAudit} />;
+      return <ReportView report={report} onRestart={handleRestartAudit} userEmail={userEmail} />;
     }
 
     return (
@@ -120,7 +166,7 @@ const AuditWizard: React.FC = () => {
             {currentStep < totalSteps - 1 ? (
               <>Next <ArrowRight className="ml-2 h-4 w-4" /></>
             ) : (
-              'Generate Report'
+              'Continue to Report'
             )}
           </Button>
         </div>

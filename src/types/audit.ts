@@ -29,6 +29,7 @@ export interface CategoryAssessment {
   score: number;
   tools: string[];
   improvements: string[];
+  timeSavings: string; // Added time savings estimate
 }
 
 export interface AuditReport {
@@ -36,6 +37,7 @@ export interface AuditReport {
   overallRating: RatingLevel;
   overallScore: number;
   topRecommendations: string[];
+  totalTimeSavings: string; // Added total time savings estimate
 }
 
 export const categoryLabels: Record<WorkflowCategory, string> = {
