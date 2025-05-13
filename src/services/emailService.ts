@@ -21,7 +21,7 @@ export const sendReportEmail = async ({
     console.log(`Sending report email to ${userEmail} via API endpoint`);
     
     // Make API call to our backend endpoint
-    const response = await fetch('/api/send-report', {
+    const response = await fetch('https://workflow-ai-audit.onrender.com/api/send-report', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
