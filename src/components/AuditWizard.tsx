@@ -73,11 +73,16 @@ const AuditWizard: React.FC = () => {
       const generatedReport = generateAuditReport(answers);
       setReport(generatedReport);
       
-      // Send email using the email service
+      // Send email using the email service with pain point and tech readiness
+      const painPointAnswer = answers.find(a => a.questionId === 'general-1')?.value || '';
+      const techReadinessAnswer = answers.find(a => a.questionId === 'general-2')?.value || '';
+      
       const emailSent = await sendReportEmail({
         userEmail: email,
         report: generatedReport,
-        bccEmail: "your-email@example.com" // Replace with your email
+        bccEmail: "your-email@example.com", // Will BCC you
+        painPoint: painPointAnswer,
+        techReadiness: techReadinessAnswer
       });
       
       if (emailSent) {
@@ -134,7 +139,12 @@ const AuditWizard: React.FC = () => {
     }
 
     if (report) {
-      return <ReportView report={report} onRestart={handleRestartAudit} userEmail={userEmail} />;
+      return <ReportView 
+        report={report} 
+        onRestart={handleRestartAudit} 
+        userEmail={userEmail} 
+        allAnswers={answers} 
+      />;
     }
 
     return (

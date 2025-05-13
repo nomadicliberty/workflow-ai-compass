@@ -112,10 +112,12 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail, a
     setIsEmailSending(true);
     
     try {
-      // Send email using emailService
+      // Send email using emailService with pain point and tech readiness
       const success = await sendReportEmail({
         userEmail: emailInput,
         report: report,
+        painPoint: painPointAnswer,
+        techReadiness: techReadinessAnswer
       });
       
       if (success) {

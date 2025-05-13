@@ -12,39 +12,38 @@ interface SendReportEmailParams {
 export const sendReportEmail = async ({ 
   userEmail, 
   report, 
-  bccEmail = "your-email@example.com" // Default BCC email
+  bccEmail = "your-email@example.com", // Default BCC email
+  painPoint,
+  techReadiness
 }: SendReportEmailParams): Promise<boolean> => {
   try {
     console.log(`Sending report email to ${userEmail} with BCC to ${bccEmail}`);
-    console.log("Report content:", report);
-
-    // In production, this would use Resend's API
-    // For now we're just simulating the API call
-    // Will be replaced with actual implementation once API key is provided
     
-    // Simulate API call
-    // In real implementation with Resend API key:
-    /*
+    // Create the HTML content for the email
+    const emailHtml = generateReportHtml(report, painPoint, techReadiness);
+    
+    // Make API call to Resend
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Authorization': `Bearer re_XrDnBdDr_8mnDEL8yWwv9ug4yZ9zySgca`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Workflow AI Audit <workflow@yourdomain.com>',
+        from: 'Workflow AI Audit <workflow@nomadicliberty.com>',
         to: userEmail,
         bcc: bccEmail,
-        subject: 'Your Workflow AI Audit Report',
-        html: generateReportHtml(report),
+        subject: 'Your Workflow AI Audit Results',
+        html: emailHtml,
       }),
     });
 
-    return response.ok;
-    */
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Resend API error:", errorData);
+      return false;
+    }
 
-    // Simulation for now
-    await new Promise(resolve => setTimeout(resolve, 1500));
     return true;
   } catch (error) {
     console.error("Error sending email:", error);
@@ -53,7 +52,29 @@ export const sendReportEmail = async ({
 };
 
 // Helper function to generate HTML content for the email
-const generateReportHtml = (report: AuditReport): string => {
+const generateReportHtml = (
+  report: AuditReport, 
+  painPoint?: string,
+  techReadiness?: string
+): string => {
+  // Get personalized intro based on answers
+  let personalizedIntro = "";
+  if (painPoint || techReadiness) {
+    if (painPoint) {
+      personalizedIntro += `We understand that "${painPoint}" is your primary operational challenge. `;
+    }
+    
+    if (techReadiness) {
+      if (techReadiness.includes("very eager") || techReadiness.includes("open to")) {
+        personalizedIntro += "Your team's enthusiasm for new technology positions you well to implement the suggested automation solutions.";
+      } else if (techReadiness.includes("resistant") || techReadiness.includes("hesitant")) {
+        personalizedIntro += "We've focused on solutions that are user-friendly and come with excellent support resources for teams that may need extra assistance with new technology.";
+      } else {
+        personalizedIntro += "Our recommendations are tailored to match your team's comfort level with technology adoption.";
+      }
+    }
+  }
+  
   // Build HTML email template
   return `
     <!DOCTYPE html>
@@ -87,6 +108,13 @@ const generateReportHtml = (report: AuditReport): string => {
           <img class="logo" src="https://via.placeholder.com/200x50?text=Nomadic+Liberty" alt="Nomadic Liberty LLC" />
           <h1>Your Workflow AI Audit Results</h1>
         </div>
+        
+        ${personalizedIntro ? `
+        <div class="section">
+          <h2>Personalized Assessment</h2>
+          <p>${personalizedIntro}</p>
+        </div>
+        ` : ''}
         
         <div class="section">
           <h2>Overall Workflow Automation Level</h2>
