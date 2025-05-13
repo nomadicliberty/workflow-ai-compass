@@ -80,7 +80,6 @@ const AuditWizard: React.FC = () => {
       const emailSent = await sendReportEmail({
         userEmail: email,
         report: generatedReport,
-        bccEmail: "your-email@example.com", // Will BCC you
         painPoint: painPointAnswer,
         techReadiness: techReadinessAnswer
       });

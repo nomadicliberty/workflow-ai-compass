@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Mail, FileDown } from 'lucide-react';
@@ -70,7 +69,7 @@ const ExportSection: React.FC<ExportSectionProps> = ({
     setIsEmailSending(true);
     
     try {
-      // Send email using emailService with pain point and tech readiness
+      // Send email using the email service with pain point and tech readiness
       const success = await sendReportEmail({
         userEmail: emailInput,
         report: report,
