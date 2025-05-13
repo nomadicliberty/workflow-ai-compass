@@ -1,22 +1,61 @@
 
 import React, { useState } from 'react';
-import { AuditReport, CategoryAssessment, categoryLabels, ratingDescriptions, getRatingColor } from '../types/audit';
+import { AuditReport, CategoryAssessment, categoryLabels, ratingDescriptions, getRatingColor, AuditAnswer } from '../types/audit';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Download, RotateCcw, Mail, Calendar } from 'lucide-react';
+import { Download, RotateCcw, Mail, Calendar, CircleDot, FileDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Progress } from '@/components/ui/progress';
+import { sendReportEmail } from '../services/emailService';
+import { generatePDF } from '../utils/pdfGenerator';
 
 interface ReportViewProps {
   report: AuditReport;
   onRestart: () => void;
   userEmail?: string;
+  allAnswers?: AuditAnswer[];
 }
 
-const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail }) => {
+const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail, allAnswers }) => {
   const [emailInput, setEmailInput] = useState(userEmail || '');
+  const [isEmailSending, setIsEmailSending] = useState(false);
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const { toast } = useToast();
+  
+  // Get pain point and tech readiness from answers
+  const painPointAnswer = allAnswers?.find(a => a.questionId === 'general-1')?.value || '';
+  const techReadinessAnswer = allAnswers?.find(a => a.questionId === 'general-2')?.value || '';
+  
+  // Generate personalized intro based on answers
+  const getPersonalizedIntro = () => {
+    let techReadinessLevel = "neutral";
+    
+    // Determine tech readiness level
+    if (techReadinessAnswer.includes('Very resistant') || techReadinessAnswer.includes('Somewhat hesitant')) {
+      techReadinessLevel = "cautious";
+    } else if (techReadinessAnswer.includes('open') || techReadinessAnswer.includes('eager')) {
+      techReadinessLevel = "enthusiastic";
+    }
+    
+    // Create personalized message
+    let intro = "";
+    
+    if (painPointAnswer) {
+      intro += `Based on your feedback, we see that "${painPointAnswer}" is your primary operational challenge. `;
+    }
+    
+    if (techReadinessLevel === "cautious") {
+      intro += `We understand your team may need extra support with new technologies, so we've focused on solutions that offer excellent training resources and simple interfaces.`;
+    } else if (techReadinessLevel === "enthusiastic") {
+      intro += `Your team's enthusiasm for new technology is a strength! We've suggested cutting-edge tools that can significantly boost your efficiency.`;
+    } else {
+      intro += `We've tailored our recommendations to match your team's comfort level with technology while addressing your workflow needs.`;
+    }
+    
+    return intro || "Based on your responses, we've prepared a customized workflow assessment for your business.";
+  };
   
   const handleDownload = () => {
     // Create a formatted report for download
@@ -64,19 +103,82 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail })
     
     toast({
       title: "Opening booking calendar",
-      description: "You'll be able to schedule a free discovery call with our team.",
+      description: "You'll be able to schedule a free 20-minute AI consultation call.",
     });
   };
   
-  const handleSendEmail = (e: React.FormEvent) => {
+  const handleSendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsEmailSending(true);
     
-    // In a real app, this would connect to an email service
-    toast({
-      title: "Report sent!",
-      description: `Your audit report has been sent to ${emailInput}`,
-    });
-    setEmailInput('');
+    try {
+      // Send email using emailService
+      const success = await sendReportEmail({
+        userEmail: emailInput,
+        report: report,
+      });
+      
+      if (success) {
+        toast({
+          title: "Report sent!",
+          description: `Your audit report has been sent to ${emailInput}`,
+        });
+        setEmailInput('');
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Failed to send email",
+          description: "There was an error sending your report. Please try again.",
+        });
+      }
+    } catch (error) {
+      console.error("Error sending email:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to send email",
+        description: "There was an error sending your report. Please try again.",
+      });
+    } finally {
+      setIsEmailSending(false);
+    }
+  };
+  
+  const handleGeneratePDF = async () => {
+    setIsPdfGenerating(true);
+    try {
+      await generatePDF(report, painPointAnswer, techReadinessAnswer);
+      toast({
+        title: "PDF generated!",
+        description: "Your audit report has been downloaded as a PDF.",
+      });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to generate PDF",
+        description: "There was an error generating your PDF. Please try again.",
+      });
+    } finally {
+      setIsPdfGenerating(false);
+    }
+  };
+  
+  // Helper function to render automation level dots
+  const renderAutomationDots = (score: number) => {
+    const totalDots = 5;
+    const filledDots = Math.round((score / 100) * totalDots);
+    
+    return (
+      <div className="flex space-x-1">
+        {[...Array(totalDots)].map((_, i) => (
+          <CircleDot 
+            key={i} 
+            className={`h-4 w-4 ${i < filledDots ? 'text-workflow-purpleDark' : 'text-gray-300'}`} 
+            fill={i < filledDots ? 'currentColor' : 'none'}
+          />
+        ))}
+      </div>
+    );
   };
   
   // Helper component for rendering category assessment
@@ -96,13 +198,16 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail })
         </CardHeader>
         <CardContent className="pt-4">
           <div className="mb-4">
-            <div className="w-full bg-workflow-lightGray rounded-full h-2.5">
-              <div 
-                className="bg-workflow-purpleDark h-2.5 rounded-full"
-                style={{ width: `${assessment.score}%` }}
-              ></div>
+            <div className="flex justify-between items-center mb-2">
+              <div className="text-sm text-gray-500">Automation Level:</div>
+              {renderAutomationDots(assessment.score)}
             </div>
-            <p className="text-right text-sm text-gray-500 mt-1">{assessment.score}/100</p>
+            <Progress value={assessment.score} className="h-2.5 bg-workflow-lightGray" />
+            <div className="flex justify-between items-center mt-1">
+              <div className="text-xs text-gray-500">Manual</div>
+              <div className="text-sm font-medium">{assessment.score}/100</div>
+              <div className="text-xs text-gray-500">Automated</div>
+            </div>
           </div>
           
           <div className="mb-4">
@@ -143,6 +248,14 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail })
         </p>
       </div>
       
+      {/* Personalized Summary */}
+      <Card className="mb-8 border border-workflow-blue bg-workflow-blue bg-opacity-10">
+        <CardContent className="pt-6 pb-6">
+          <h3 className="text-xl font-semibold mb-2">Personalized Assessment</h3>
+          <p className="text-gray-700">{getPersonalizedIntro()}</p>
+        </CardContent>
+      </Card>
+      
       {/* Overall Summary Card */}
       <Card className="mb-8 border-2 border-workflow-purpleDark">
         <CardHeader className="bg-workflow-purple bg-opacity-30">
@@ -155,13 +268,19 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail })
         </CardHeader>
         <CardContent className="pt-6">
           <div className="mb-6">
-            <div className="w-full bg-workflow-lightGray rounded-full h-3">
-              <div 
-                className="bg-workflow-purpleDark h-3 rounded-full transition-all duration-500"
-                style={{ width: `${report.overallScore}%` }}
-              ></div>
+            <div className="flex justify-between items-center mb-2">
+              <div className="text-sm text-gray-500">Automation Level:</div>
+              {renderAutomationDots(report.overallScore)}
             </div>
-            <p className="text-right text-sm text-gray-500 mt-1">{report.overallScore}/100</p>
+            <Progress
+              value={report.overallScore}
+              className="h-3 bg-workflow-lightGray"
+            />
+            <div className="flex justify-between items-center mt-1">
+              <div className="text-xs text-gray-500">Manual</div>
+              <div className="text-sm font-medium">{report.overallScore}/100</div>
+              <div className="text-xs text-gray-500">Automated</div>
+            </div>
           </div>
           
           <p className="text-gray-700 mb-4">{ratingDescriptions[report.overallRating]}</p>
@@ -237,6 +356,11 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail })
             Download Report
           </Button>
           
+          <Button variant="outline" onClick={handleGeneratePDF} disabled={isPdfGenerating}>
+            <FileDown className="mr-2 h-4 w-4" />
+            {isPdfGenerating ? 'Generating PDF...' : 'Download as PDF'}
+          </Button>
+          
           <form onSubmit={handleSendEmail} className="flex space-x-2">
             <input
               type="email"
@@ -246,12 +370,28 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail })
               onChange={(e) => setEmailInput(e.target.value)}
               required
             />
-            <Button type="submit">
+            <Button type="submit" disabled={isEmailSending}>
               <Mail className="mr-2 h-4 w-4" />
-              Email
+              {isEmailSending ? 'Sending...' : 'Email'}
             </Button>
           </form>
         </div>
+      </div>
+      
+      {/* Call to Action */}
+      <div className="mt-10 text-center bg-workflow-purpleDark bg-opacity-10 p-6 rounded-lg border border-workflow-purpleDark">
+        <h3 className="text-xl font-semibold mb-3">Ready to transform your workflow?</h3>
+        <p className="text-gray-700 mb-5">
+          Book a free 20-minute AI consultation call to discuss how we can help implement these recommendations.
+        </p>
+        <Button 
+          onClick={handleBookCall}
+          size="lg"
+          className="bg-workflow-purpleDark hover:bg-purple-700"
+        >
+          <Calendar className="mr-2 h-4 w-4" />
+          Schedule Your Free Consultation
+        </Button>
       </div>
       
       {/* Restart Button */}
