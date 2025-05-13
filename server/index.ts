@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import type { Request, Response } from 'express';
 
 dotenv.config();
 
@@ -9,46 +10,48 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.post('/api/send-report', async (req, res) => {
-  const { userEmail, report, painPoint, techReadiness } = req.body;
+app.post('/api/send-report', (req: Request, res: Response) => {
+  (async () => {
+    const { userEmail, report, painPoint, techReadiness } = req.body;
 
-  if (!userEmail || !report) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  const emailHtml = generateReportHtml(report, painPoint, techReadiness);
-  console.log("EMAIL HTML OUTPUT:\n", emailHtml);
-
-
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'Jason Henry <jason@nomadicliberty.com>',
-        to: userEmail,
-        bcc: 'jason@nomadicliberty.com',
-        subject: 'Your Workflow AI Audit Results',
-        html: emailHtml,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      console.error('Resend error:', JSON.stringify(error, null, 2));
-
-      return res.status(500).json({ error: 'Failed to send email' });
+    if (!userEmail || !report) {
+      res.status(400).json({ error: 'Missing required fields' });
+      return;
     }
 
-    res.status(200).json({ success: true });
-  } catch (err) {
-    console.error('Server error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+    const emailHtml = generateReportHtml(report, painPoint, techReadiness);
+
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'Jason Henry <jason@nomadicliberty.com>',
+          to: userEmail,
+          bcc: 'jason@nomadicliberty.com',
+          subject: 'Your Workflow AI Audit Results',
+          html: emailHtml,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Resend error:', JSON.stringify(error, null, 2));
+        res.status(500).json({ error: 'Failed to send email' });
+        return;
+      }
+
+      res.status(200).json({ success: true });
+    } catch (err) {
+      console.error('Server error:', err);
+      res.status(500).json({ error: 'Server error' });
+    }
+  })();
 });
+
 const generateReportHtml = (
   report: any,
   painPoint?: string,
