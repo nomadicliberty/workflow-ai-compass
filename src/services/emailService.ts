@@ -12,7 +12,7 @@ interface SendReportEmailParams {
 export const sendReportEmail = async ({ 
   userEmail, 
   report, 
-  bccEmail = "your-email@example.com", // Default BCC email
+  bccEmail = "jason@nomadicliberty.com", // Updated default BCC email
   painPoint,
   techReadiness
 }: SendReportEmailParams): Promise<boolean> => {
@@ -30,7 +30,7 @@ export const sendReportEmail = async ({
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Workflow AI Audit <workflow@nomadicliberty.com>',
+        from: 'Jason Henry <jason@nomadicliberty.com>', // Updated sender address
         to: userEmail,
         bcc: bccEmail,
         subject: 'Your Workflow AI Audit Results',
