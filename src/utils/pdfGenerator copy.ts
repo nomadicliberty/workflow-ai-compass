@@ -1,5 +1,14 @@
-import { jsPDF } from "jspdf";
+
 import { AuditReport } from "../types/audit";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+
+// Define types for jsPDF with autotable
+declare module "jspdf" {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+  }
+}
 
 export const generatePDF = async (
   report: AuditReport, 
@@ -10,25 +19,25 @@ export const generatePDF = async (
     // Create a new PDF document
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    let yPos = 20;
+    let yPos = 15;
     
-    // Add header with company branding
+    // Add header
     doc.setFontSize(20);
-    doc.setTextColor(0, 168, 168); // #00a8a8 teal color
+    doc.setTextColor(110, 70, 199); // Purple color
     doc.text("Workflow AI Audit Report", pageWidth / 2, yPos, { align: "center" });
-    yPos += 15;
+    yPos += 10;
     
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.setTextColor(100, 100, 100); // Gray color
     doc.text("Nomadic Liberty LLC", pageWidth / 2, yPos, { align: "center" });
-    yPos += 20;
+    yPos += 15;
     
     // Add personalized summary if available
     if (painPoint || techReadiness) {
-      doc.setFontSize(16);
+      doc.setFontSize(14);
       doc.setTextColor(0, 0, 0);
-      doc.text("Personalized Assessment", 20, yPos);
-      yPos += 10;
+      doc.text("Personalized Assessment", 14, yPos);
+      yPos += 7;
       
       let personalizedText = "";
       if (painPoint) {
@@ -43,127 +52,123 @@ export const generatePDF = async (
         personalizedText += "Our recommendations are tailored to match your team's comfort level with technology adoption.";
       }
       
-      const splitText = doc.splitTextToSize(personalizedText, pageWidth - 40);
-      doc.setFontSize(12);
-      doc.text(splitText, 20, yPos);
-      yPos += (splitText.length * 7) + 10;
+      const splitText = doc.splitTextToSize(personalizedText, pageWidth - 28);
+      doc.setFontSize(10);
+      doc.text(splitText, 14, yPos);
+      yPos += (splitText.length * 5) + 10;
     }
     
     // Add overall assessment
-    doc.setFontSize(16);
-    doc.setTextColor(0, 0, 0);
-    doc.text("Overall Assessment", 20, yPos);
-    yPos += 10;
-    
     doc.setFontSize(14);
-    doc.text(`Rating: ${report.overallRating}`, 20, yPos);
-    yPos += 8;
-    doc.text(`Score: ${report.overallScore}/100`, 20, yPos);
-    yPos += 8;
+    doc.setTextColor(0, 0, 0);
+    doc.text("Overall Assessment", 14, yPos);
+    yPos += 7;
+    
+    doc.setFontSize(12);
+    doc.text(`Rating: ${report.overallRating} (Score: ${report.overallScore}/100)`, 14, yPos);
+    yPos += 7;
     
     // Visual representation of score
     doc.setDrawColor(200, 200, 200);
     doc.setFillColor(230, 230, 230);
-    doc.rect(20, yPos, 150, 8, "F");
-    doc.setFillColor(0, 168, 168); // Teal instead of purple
-    doc.rect(20, yPos, report.overallScore * 1.5, 8, "F");
-    yPos += 15;
-    
-    // Time savings
-    doc.setFontSize(14);
-    doc.setTextColor(0, 128, 0);
-    doc.text(`Potential Time Savings: ${report.totalTimeSavings}`, 20, yPos);
-    yPos += 20;
-    
-    // Top recommendations
-    doc.setFontSize(16);
-    doc.setTextColor(0, 0, 0);
-    doc.text("Top Recommendations:", 20, yPos);
+    doc.rect(14, yPos, 100, 5, "F");
+    doc.setFillColor(110, 70, 199);
+    doc.rect(14, yPos, report.overallScore, 5, "F");
     yPos += 10;
     
+    // Time savings
     doc.setFontSize(12);
-    report.topRecommendations.forEach((rec, idx) => {
-      doc.text(`${idx + 1}. ${rec}`, 20, yPos);
-      yPos += 8;
-    });
+    doc.setTextColor(0, 128, 0);
+    doc.text(`Potential Time Savings: ${report.totalTimeSavings}`, 14, yPos);
     yPos += 15;
     
+    // Top recommendations
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Top Recommendations:", 14, yPos);
+    yPos += 10;
+    
+    doc.setFontSize(10);
+    report.topRecommendations.forEach((rec, idx) => {
+      doc.text(`${idx + 1}. ${rec}`, 14, yPos);
+      yPos += 7;
+    });
+    yPos += 10;
+    
     // Category assessments - create tables for each category
-    doc.setFontSize(16);
-    doc.text("Category Assessments", 20, yPos);
-    yPos += 15;
+    doc.setFontSize(14);
+    doc.text("Category Assessments", 14, yPos);
+    yPos += 10;
     
     for (const category of report.categories) {
       // Check if we need a new page
-      if (yPos > 250) {
+      if (yPos > 240) {
         doc.addPage();
         yPos = 20;
       }
       
       const categoryName = getCategoryName(category.category);
       
-      doc.setFontSize(14);
-      doc.setTextColor(0, 168, 168); // Teal
-      doc.text(categoryName, 20, yPos);
-      yPos += 8;
+      doc.setFontSize(12);
+      doc.text(categoryName, 14, yPos);
+      yPos += 7;
       
       // Rating and score
-      doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`Rating: ${category.rating} (Score: ${category.score}/100)`, 20, yPos);
-      yPos += 8;
+      doc.setFontSize(10);
+      doc.text(`Rating: ${category.rating} (Score: ${category.score}/100)`, 14, yPos);
+      yPos += 7;
       
       // Visual representation of score
       doc.setDrawColor(200, 200, 200);
       doc.setFillColor(230, 230, 230);
-      doc.rect(20, yPos, 150, 5, "F");
-      doc.setFillColor(0, 168, 168); // Teal
-      doc.rect(20, yPos, category.score * 1.5, 5, "F");
-      yPos += 10;
+      doc.rect(14, yPos, 100, 3, "F");
+      doc.setFillColor(110, 70, 199);
+      doc.rect(14, yPos, category.score, 3, "F");
+      yPos += 7;
       
       // Time savings
       doc.setTextColor(0, 128, 0);
-      doc.text(`Time Savings: ${category.timeSavings}`, 20, yPos);
+      doc.text(`Time Savings: ${category.timeSavings}`, 14, yPos);
       doc.setTextColor(0, 0, 0);
-      yPos += 8;
+      yPos += 7;
       
       // Recommended tools
-      doc.text(`Recommended Tools: ${category.tools.join(", ")}`, 20, yPos);
+      doc.text(`Recommended Tools: ${category.tools.join(", ")}`, 14, yPos);
       yPos += 10;
       
-      // Improvements (replacing autoTable with simple text)
-      doc.setFontSize(12);
-      doc.text("Suggested Improvements:", 20, yPos);
-      yPos += 8;
-      
-      category.improvements.forEach((improvement, idx) => {
-        doc.text(`- ${improvement}`, 25, yPos);
-        yPos += 7;
+      // Use autoTable for improvements
+      doc.autoTable({
+        startY: yPos,
+        head: [["Suggested Improvements"]],
+        body: category.improvements.map(imp => [imp]),
+        margin: { left: 14 },
+        headStyles: { fillColor: [110, 70, 199], textColor: [255, 255, 255] },
+        styles: { fontSize: 9 },
+        tableWidth: pageWidth - 28,
       });
       
-      yPos += 15;
+      yPos = (doc as any).lastAutoTable.finalY + 15;
     }
     
     // Add call to action
-    if (yPos > 250) {
+    if (yPos > 240) {
       doc.addPage();
       yPos = 20;
     }
     
-    // Create a colored rectangle for CTA
-    doc.setFillColor(230, 245, 245); // Light teal
-    doc.rect(20, yPos, pageWidth - 40, 40, "F");
+    doc.setFillColor(230, 225, 255); // Light purple
+    doc.rect(14, yPos, pageWidth - 28, 30, "F");
     
-    doc.setFontSize(14);
-    doc.setTextColor(0, 168, 168); // Teal
-    yPos += 15;
+    doc.setFontSize(12);
+    doc.setTextColor(110, 70, 199);
+    yPos += 10;
     doc.text("Ready to transform your workflow?", pageWidth / 2, yPos, { align: "center" });
     
-    yPos += 10;
-    doc.setFontSize(12);
+    yPos += 7;
+    doc.setFontSize(10);
     doc.text("Book a free 20-minute AI consultation call", pageWidth / 2, yPos, { align: "center" });
     
-    yPos += 10;
+    yPos += 7;
     doc.text("https://calendly.com/workflow-ai/discovery", pageWidth / 2, yPos, { align: "center" });
     
     // Add footer
