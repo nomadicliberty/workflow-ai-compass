@@ -13,6 +13,8 @@ interface ReportScores {
 interface AIReportRequest {
   scores: ReportScores;
   keyChallenge?: string;
+  techReadiness?: string;
+  painPoint?: string;
 }
 
 interface AIReportResponse {
@@ -24,17 +26,22 @@ interface AIReportResponse {
  */
 export const generateAIReport = async (
   scores: ReportScores,
-  keyChallenge?: string
+  keyChallenge?: string,
+  techReadiness?: string
 ): Promise<string> => {
   try {
-    console.log('Sending assessment data to AI backend for report generation');
+    console.log('🤖 Sending assessment data to AI backend for report generation...');
+    console.log('Data being sent:', { scores, keyChallenge, techReadiness });
     
     const requestData: AIReportRequest = {
       scores,
-      keyChallenge
+      keyChallenge: keyChallenge || 'workflow efficiency',
+      techReadiness,
+      painPoint: keyChallenge // Also send as painPoint for backward compatibility
     };
 
-    // Updated to use the correct backend URL
+    console.log('🌐 Making API call to:', 'https://workflow-ai-audit.onrender.com/api/generateAiSummary');
+    
     const response = await fetch('https://workflow-ai-audit.onrender.com/api/generateAiSummary', {
       method: 'POST',
       headers: {
@@ -43,16 +50,21 @@ export const generateAIReport = async (
       body: JSON.stringify(requestData),
     });
 
+    console.log('📡 API Response status:', response.status);
+
     if (!response.ok) {
       const errorData = await response.json();
-      console.error("AI report generation error:", errorData);
+      console.error("❌ AI report generation error:", errorData);
       throw new Error('Failed to generate AI report');
     }
 
     const aiResponse: AIReportResponse = await response.json();
+    console.log('✅ AI summary generated successfully, length:', aiResponse.summary.length);
+    console.log('Preview:', aiResponse.summary.substring(0, 200) + '...');
+    
     return aiResponse.summary;
   } catch (error) {
-    console.error("Error generating AI report:", error);
+    console.error("❌ Error generating AI report:", error);
     throw error;
   }
 };

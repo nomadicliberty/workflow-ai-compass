@@ -56,16 +56,26 @@ app.post('/api/send-report', (req: Request, res: Response) => {
 
 app.post('/api/generateAiSummary', (req: Request, res: Response) => {
   (async () => {
-    const { scores, keyChallenge = 'workflow efficiency' } = req.body;
+    const { scores, keyChallenge = 'workflow efficiency', techReadiness, painPoint } = req.body;
+
+    console.log('🤖 Received AI summary request with data:', {
+      scores: scores ? 'present' : 'missing',
+      keyChallenge,
+      techReadiness: techReadiness ? 'present' : 'not provided',
+      painPoint: painPoint ? 'present' : 'not provided'
+    });
 
     if (!scores || !scores.byCategory) {
+      console.error('❌ Missing scores data in request');
       res.status(400).json({ error: 'Missing scores data' });
       return;
     }
 
-    const prompt = buildPrompt(scores, keyChallenge);
+    const prompt = buildPrompt(scores, keyChallenge, techReadiness, painPoint);
+    console.log('📝 Generated prompt length:', prompt.length);
 
     try {
+      console.log('🚀 Calling OpenAI API...');
       const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -81,7 +91,7 @@ app.post('/api/generateAiSummary', (req: Request, res: Response) => {
 
       if (!openaiResponse.ok) {
         const err = await openaiResponse.json();
-        console.error("OpenAI error:", err);
+        console.error("❌ OpenAI error:", err);
         res.status(500).json({ error: 'Failed to get summary from GPT' });
         return;
       }
@@ -91,9 +101,10 @@ app.post('/api/generateAiSummary', (req: Request, res: Response) => {
       };
 
       const summary = json.choices?.[0]?.message?.content || 'No summary returned.';
+      console.log('✅ OpenAI response received, summary length:', summary.length);
       res.json({ summary });
     } catch (error) {
-      console.error("GPT error:", error);
+      console.error("❌ GPT error:", error);
       res.status(500).json({ error: 'Internal server error' });
     }
   })();
@@ -260,29 +271,46 @@ const getCategoryName = (category: string): string => {
   return names[category] || category;
 };
 
-function buildPrompt(scores: any, keyChallenge: string): string {
+function buildPrompt(scores: any, keyChallenge: string, techReadiness?: string, painPoint?: string): string {
   const { overall, totalTimeSavings, byCategory } = scores;
 
   const categories = Object.entries(byCategory)
     .map(([name, data]: any) => `- ${name}: ${data.score}/100 (${data.level})`)
     .join('\n');
 
-  return `
-You are an AI automation consultant generating a friendly, human-readable report for a small business.
+  // Build personalized context
+  let personalContext = '';
+  const challenge = painPoint || keyChallenge;
+  
+  if (challenge) {
+    personalContext += `Their biggest operational challenge is: ${challenge}\n`;
+  }
+  
+  if (techReadiness) {
+    personalContext += `Their team's attitude toward new technology: ${techReadiness}\n`;
+  }
 
-Their biggest operational challenge is: ${keyChallenge}  
+  return `
+You are an AI automation consultant generating a friendly, human-readable report for a small business owner who just completed a workflow audit.
+
+${personalContext}
 Their overall automation score is ${overall}/100  
 They could save about ${totalTimeSavings} hours per week with improvements.
 
 Category breakdown:
 ${categories}
 
-For each category:
-- Explain what the score means in plain terms
-- Give 2–3 specific, non-jargony suggestions
-- Recommend one tool or service to try
+Please write a comprehensive, personalized report that:
 
-End with a short paragraph explaining how Nomadic Liberty, the consultancy that provided this audit, can help implement these improvements.
+1. Addresses their specific challenge ("${challenge}") in the opening
+2. ${techReadiness ? `Considers their team's technology comfort level (${techReadiness}) when making recommendations` : 'Uses accessible, non-technical language'}
+3. For each category, explains what the score means and offers 2–3 specific improvement suggestions
+4. Recommends practical tools or platforms they could try
+5. Maintains an encouraging, supportive tone throughout
+
+End with a paragraph explaining how Nomadic Liberty, the consultancy that provided this audit, can help implement these improvements with hands-on support tailored to their specific needs and comfort level.
+
+Keep the tone conversational and avoid overwhelming technical jargon.
 `;
 }
 

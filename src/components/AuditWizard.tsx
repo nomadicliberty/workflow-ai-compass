@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AuditQuestion, AuditAnswer, AuditReport } from '../types/audit';
 import { auditQuestions, generateAuditReport } from '../data/auditQuestions';
@@ -18,6 +17,7 @@ const AuditWizard: React.FC = () => {
   const [answers, setAnswers] = useState<AuditAnswer[]>([]);
   const [report, setReport] = useState<AuditReport | null>(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [showEmailForm, setShowEmailForm] = useState(false);
   const { toast } = useToast();
@@ -69,37 +69,45 @@ const AuditWizard: React.FC = () => {
   const handleEmailSubmit = async (email: string) => {
     setUserEmail(email);
     setIsGeneratingReport(true);
+    setGenerationStatus('Analyzing your responses...');
     
     try {
       // Generate base report using existing logic
       const baseReport = generateAuditReport(answers);
       
-      // Get pain point for AI generation
+      // Get pain point and tech readiness for AI generation
       const painPointAnswer = answers.find(a => a.questionId === 'general-1')?.value || '';
       const techReadinessAnswer = answers.find(a => a.questionId === 'general-2')?.value || '';
+      
+      console.log('🔍 Extracted user inputs:');
+      console.log('Pain Point:', painPointAnswer);
+      console.log('Tech Readiness:', techReadinessAnswer);
       
       // Transform report data for AI backend
       const reportScores = transformReportForAI(baseReport);
       
       try {
-        // Try to get AI-generated summary with timeout
-        console.log('Attempting to generate AI summary...');
+        setGenerationStatus('Generating AI-powered insights...');
+        console.log('🚀 Starting AI summary generation...');
+        
+        // Try to get AI-generated summary with timeout and better error handling
         const aiSummary = await Promise.race([
-          generateAIReport(reportScores, painPointAnswer),
+          generateAIReport(reportScores, painPointAnswer, techReadinessAnswer),
           new Promise<string>((_, reject) => 
-            setTimeout(() => reject(new Error('AI generation timeout')), 15000)
+            setTimeout(() => reject(new Error('AI generation timeout after 15 seconds')), 15000)
           )
         ]);
         
         baseReport.aiGeneratedSummary = aiSummary;
-        console.log('AI summary generated successfully, length:', aiSummary.length);
+        console.log('✅ AI summary successfully integrated into report');
         
         toast({
           title: "AI Report Generated!",
           description: "Your personalized workflow assessment has been enhanced with AI insights.",
         });
       } catch (aiError) {
-        console.warn("Failed to generate AI summary, using fallback:", aiError);
+        console.warn("⚠️ Failed to generate AI summary, using fallback:", aiError);
+        setGenerationStatus('Using standard analysis...');
         toast({
           title: "Report Generated",
           description: "Your workflow assessment is ready (using standard analysis).",
@@ -108,9 +116,11 @@ const AuditWizard: React.FC = () => {
       
       setReport(baseReport);
       
-      // Send email with the report (including AI summary if available) with timeout
+      // Send email with the report
       try {
-        console.log('Attempting to send email...');
+        setGenerationStatus('Sending email report...');
+        console.log('📧 Attempting to send email to:', email);
+        
         const emailSent = await Promise.race([
           sendReportEmail({
             userEmail: email,
@@ -119,16 +129,18 @@ const AuditWizard: React.FC = () => {
             techReadiness: techReadinessAnswer
           }),
           new Promise<boolean>((_, reject) => 
-            setTimeout(() => reject(new Error('Email sending timeout')), 20000)
+            setTimeout(() => reject(new Error('Email sending timeout after 20 seconds')), 20000)
           )
         ]);
         
         if (emailSent) {
+          console.log('✅ Email sent successfully');
           toast({
             title: "Report Sent!",
             description: "Your personalized workflow audit has been sent to your email.",
           });
         } else {
+          console.warn('⚠️ Email sending returned false');
           toast({
             title: "Email Delivery Issue",
             description: "We generated your report but had trouble sending the email. You can still view it here.",
@@ -136,7 +148,7 @@ const AuditWizard: React.FC = () => {
           });
         }
       } catch (emailError) {
-        console.error("Email sending failed:", emailError);
+        console.error("❌ Email sending failed:", emailError);
         toast({
           title: "Email Delivery Issue",
           description: "We generated your report but had trouble sending the email. You can still view it here.",
@@ -144,7 +156,7 @@ const AuditWizard: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error("Error generating or sending report:", error);
+      console.error("❌ Error in report generation flow:", error);
       toast({
         title: "Something went wrong",
         description: "There was an error generating your report. Please try again.",
@@ -152,6 +164,7 @@ const AuditWizard: React.FC = () => {
       });
     } finally {
       setIsGeneratingReport(false);
+      setGenerationStatus('');
       setShowEmailForm(false);
     }
   };
@@ -177,9 +190,14 @@ const AuditWizard: React.FC = () => {
         <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
           <span className="loader mb-8"></span>
           <h2 className="text-2xl font-semibold mb-4">Analyzing Your Workflow...</h2>
-          <p className="text-gray-600 max-w-md text-center">
+          <p className="text-gray-600 max-w-md text-center mb-4">
             Our AI is processing your responses and generating personalized recommendations.
           </p>
+          {generationStatus && (
+            <div className="text-sm text-blue-600 font-medium">
+              {generationStatus}
+            </div>
+          )}
         </div>
       );
     }
