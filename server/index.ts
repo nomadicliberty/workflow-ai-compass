@@ -10,85 +10,95 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.post('/api/send-report', async (req: Request, res: Response) => {
-  const { userEmail, report, painPoint, techReadiness } = req.body;
+app.post('/api/send-report', (req: Request, res: Response) => {
+  (async () => {
+    const { userEmail, report, painPoint, techReadiness } = req.body;
 
-  if (!userEmail || !report) {
-    res.status(400).json({ error: 'Missing required fields' });
-    return;
-  }
-
-  const emailHtml = generateReportHtml(report, painPoint, techReadiness);
-
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'Jason Henry <jason@nomadicliberty.com>',
-        to: userEmail,
-        bcc: 'jason@nomadicliberty.com',
-        subject: 'Your Workflow AI Audit Results',
-        html: emailHtml,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json() as any;
-      console.error('Resend error:', JSON.stringify(error, null, 2));
-      res.status(500).json({ error: 'Failed to send email' });
+    if (!userEmail || !report) {
+      res.status(400).json({ error: 'Missing required fields' });
       return;
     }
 
-    res.status(200).json({ success: true });
-  } catch (err) {
-    console.error('Server error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+    const emailHtml = generateReportHtml(report, painPoint, techReadiness);
+
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'Jason Henry <jason@nomadicliberty.com>',
+          to: userEmail,
+          bcc: 'jason@nomadicliberty.com',
+          subject: 'Your Workflow AI Audit Results',
+          html: emailHtml,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Resend error:', JSON.stringify(error, null, 2));
+        res.status(500).json({ error: 'Failed to send email' });
+        return;
+      }
+
+      res.status(200).json({ success: true });
+    } catch (err) {
+      console.error('Server error:', err);
+      res.status(500).json({ error: 'Server error' });
+    }
+  })();
 });
 
 
-app.post('/api/generateAiSummary', async (req: Request, res: Response) => {
-  const { scores, keyChallenge = 'workflow efficiency' } = req.body;
 
-  if (!scores || !scores.byCategory) {
-    return res.status(400).json({ error: 'Missing scores data' });
-  }
+app.post('/api/generateAiSummary', (req: Request, res: Response) => {
+  (async () => {
+    const { scores, keyChallenge = 'workflow efficiency' } = req.body;
 
-  const prompt = buildPrompt(scores, keyChallenge);
+    if (!scores || !scores.byCategory) {
+      res.status(400).json({ error: 'Missing scores data' });
+      return;
+    }
 
-  try {
-    const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7
-      })
-    });
+    const prompt = buildPrompt(scores, keyChallenge);
 
-    if (!openaiResponse.ok) {
-  const err = await openaiResponse.json() as any;
-  console.error("OpenAI error:", err);
-  return res.status(500).json({ error: 'Failed to get summary from GPT' });
-}
+    try {
+      const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "gpt-4",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.7
+        })
+      });
 
+      if (!openaiResponse.ok) {
+        const err = await openaiResponse.json();
+        console.error("OpenAI error:", err);
+        res.status(500).json({ error: 'Failed to get summary from GPT' });
+        return;
+      }
 
-  const json = await openaiResponse.json() as any;
-    const summary = json.choices?.[0]?.message?.content || 'No summary returned.';
-    res.json({ summary });
-  } catch (error) {
-    console.error("GPT error:", error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+      const json = await openaiResponse.json() as {
+      choices: { message: { content: string } }[];
+      };
+
+      const summary = json.choices?.[0]?.message?.content || 'No summary returned.';
+      res.json({ summary });
+    } catch (error) {
+      console.error("GPT error:", error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  })();
 });
+
 
 
 const generateReportHtml = (
