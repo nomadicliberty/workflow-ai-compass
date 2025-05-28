@@ -11,7 +11,7 @@ interface OverallSummaryProps {
 }
 
 const OverallSummary: React.FC<OverallSummaryProps> = ({ report }) => {
-  // Helper function to render automation level dots
+  // Helper function to render automation level dots with Nomadic colors
   const renderAutomationDots = (score: number) => {
     const totalDots = 5;
     const filledDots = Math.round((score / 100) * totalDots);
@@ -21,7 +21,7 @@ const OverallSummary: React.FC<OverallSummaryProps> = ({ report }) => {
         {[...Array(totalDots)].map((_, i) => (
           <CircleDot 
             key={i} 
-            className={`h-4 w-4 ${i < filledDots ? 'text-workflow-purpleDark' : 'text-gray-300'}`} 
+            className={`h-4 w-4 ${i < filledDots ? 'text-nomadic-teal' : 'text-nomadic-taupe'}`} 
             fill={i < filledDots ? 'currentColor' : 'none'}
           />
         ))}
@@ -30,11 +30,11 @@ const OverallSummary: React.FC<OverallSummaryProps> = ({ report }) => {
   };
 
   return (
-    <Card className="mb-8 border-2 border-workflow-purpleDark">
-      <CardHeader className="bg-workflow-purple bg-opacity-30">
+    <Card className="mb-8 border-2 border-nomadic-teal bg-nomadic-beige">
+      <CardHeader className="bg-nomadic-navy text-nomadic-white">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-semibold">Overall Assessment</h2>
-          <Badge className={`${getRatingColor(report.overallRating)} font-medium py-1.5 px-3 text-lg border`}>
+          <Badge className="bg-nomadic-teal text-nomadic-white font-medium py-1.5 px-3 text-lg border-0">
             {report.overallRating}
           </Badge>
         </div>
@@ -42,39 +42,39 @@ const OverallSummary: React.FC<OverallSummaryProps> = ({ report }) => {
       <CardContent className="pt-6">
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
-            <div className="text-sm text-gray-500">Automation Level:</div>
+            <div className="text-sm text-nomadic-taupe">Automation Level:</div>
             {renderAutomationDots(report.overallScore)}
           </div>
           <Progress
             value={report.overallScore}
-            className="h-3 bg-workflow-lightGray"
+            className="h-3 bg-nomadic-beige border border-nomadic-taupe"
           />
           <div className="flex justify-between items-center mt-1">
-            <div className="text-xs text-gray-500">Manual</div>
-            <div className="text-sm font-medium">{report.overallScore}/100</div>
-            <div className="text-xs text-gray-500">Automated</div>
+            <div className="text-xs text-nomadic-taupe">Manual</div>
+            <div className="text-sm font-medium text-nomadic-gray">{report.overallScore}/100</div>
+            <div className="text-xs text-nomadic-taupe">Automated</div>
           </div>
         </div>
         
-        <p className="text-gray-700 mb-4">{ratingDescriptions[report.overallRating]}</p>
+        <p className="text-nomadic-gray mb-4">{ratingDescriptions[report.overallRating]}</p>
         
-        <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-6">
-          <h3 className="text-lg font-semibold text-green-800 mb-2">Estimated Time Savings</h3>
-          <p className="text-green-700 font-bold text-xl">{report.totalTimeSavings}</p>
-          <p className="text-green-600 text-sm mt-1">
+        <div className="bg-nomadic-lightBlue border-2 border-nomadic-teal rounded-md p-4 mb-6">
+          <h3 className="text-lg font-semibold text-nomadic-navy mb-2">Estimated Time Savings</h3>
+          <p className="text-nomadic-teal font-bold text-xl">{report.totalTimeSavings}</p>
+          <p className="text-nomadic-gray text-sm mt-1">
             by implementing the recommended automation solutions
           </p>
         </div>
         
         <div className="mt-6">
-          <h3 className="text-xl font-semibold mb-3">Top Recommendations</h3>
+          <h3 className="text-xl font-semibold mb-3 text-nomadic-navy">Top Recommendations</h3>
           <ul className="space-y-3">
             {report.topRecommendations.map((rec, index) => (
               <li key={index} className="flex items-start">
-                <span className="inline-flex items-center justify-center bg-workflow-purpleDark text-white rounded-full w-6 h-6 mr-2 flex-shrink-0">
+                <span className="inline-flex items-center justify-center bg-nomadic-teal text-nomadic-white rounded-full w-6 h-6 mr-2 flex-shrink-0">
                   {index + 1}
                 </span>
-                <span className="text-gray-700">{rec}</span>
+                <span className="text-nomadic-gray">{rec}</span>
               </li>
             ))}
           </ul>

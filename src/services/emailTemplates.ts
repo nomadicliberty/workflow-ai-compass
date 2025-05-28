@@ -2,7 +2,7 @@
 import { AuditReport, WorkflowCategory, RatingLevel } from "../types/audit";
 
 /**
- * Generates styled HTML content for the email report
+ * Generates styled HTML content for the email report with Nomadic Liberty branding
  */
 export const generateReportHtml = (
   report: AuditReport, 
@@ -21,84 +21,94 @@ export const generateReportHtml = (
 }
 
 
-  // Build HTML email template
+  // Build HTML email template with Nomadic Liberty branding
   return `
     <!DOCTYPE html>
     <html>
     <head>
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #4D4D4D; margin: 0; padding: 0; background-color: #FFFFFF; }
         .container { max-width: 600px; margin: 0 auto; padding: 0; background-color: #ffffff; }
-        .header { background-color: #6e46c7; color: white; padding: 20px; text-align: center; }
-        .logo { max-width: 200px; margin-bottom: 10px; }
+        .header { background-color: #1B365D; color: #FFFFFF; padding: 30px 20px; text-align: center; }
+        .logo { max-width: 200px; margin-bottom: 15px; color: #FFFFFF; font-size: 24px; font-weight: bold; }
         .section { margin-bottom: 30px; padding: 0 20px; }
-        .category { margin-bottom: 20px; border-left: 4px solid #6e46c7; padding-left: 15px; }
-        .rating { display: inline-block; padding: 5px 10px; border-radius: 20px; font-size: 14px; font-weight: bold; margin: 5px 0; }
-        .manual { background-color: #fff4e6; color: #ff8b00; }
-        .partial { background-color: #e6f4ff; color: #0066cc; }
-        .automated { background-color: #e6fff4; color: #00cc66; }
-        .time-savings { font-weight: bold; color: #6e46c7; }
-        .progress-bar { height: 8px; background-color: #f1f1f1; border-radius: 4px; margin: 10px 0; }
-        .progress-fill { height: 100%; background-color: #6e46c7; border-radius: 4px; }
-        .dots { display: flex; margin: 10px 0; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
-        .dot-filled { background-color: #6e46c7; }
-        .dot-empty { background-color: #e0e0e0; }
-        .footer { background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; }
-        .button { background-color: #6e46c7; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; }
+        .category { margin-bottom: 25px; border-left: 4px solid #00A8A8; padding-left: 15px; background-color: #F5F1EB; padding: 15px; border-radius: 8px; }
+        .rating { display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; margin: 5px 0; }
+        .manual { background-color: #F5F1EB; color: #1B365D; border: 2px solid #A8998C; }
+        .partial { background-color: #E4EEF8; color: #1B365D; border: 2px solid #00A8A8; }
+        .automated { background-color: #E4EEF8; color: #1B365D; border: 2px solid #00A8A8; }
+        .time-savings { font-weight: bold; color: #00A8A8; }
+        .progress-bar { height: 12px; background-color: #F5F1EB; border-radius: 6px; margin: 15px 0; border: 1px solid #A8998C; }
+        .progress-fill { height: 100%; background-color: #00A8A8; border-radius: 6px; }
+        .dots { display: flex; margin: 15px 0; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+        .dot-filled { background-color: #00A8A8; }
+        .dot-empty { background-color: #A8998C; }
+        .footer { background-color: #1B365D; color: #FFFFFF; padding: 25px; text-align: center; font-size: 12px; }
+        .button { background-color: #00A8A8; color: #FFFFFF; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 15px 0; }
+        .ai-section { background-color: #E4EEF8; border: 2px solid #00A8A8; border-radius: 10px; padding: 20px; margin: 20px 0; }
+        .ai-badge { background-color: #00A8A8; color: #FFFFFF; padding: 5px 12px; border-radius: 15px; font-size: 12px; font-weight: bold; display: inline-block; margin-bottom: 10px; }
+        .brand-highlight { color: #00A8A8; font-weight: bold; }
+        .section-bg { background-color: #F5F1EB; padding: 20px; border-radius: 8px; margin: 15px 0; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <img class="logo" src="https://via.placeholder.com/200x50?text=Nomadic+Liberty" alt="Nomadic Liberty LLC" />
-          <h1>Your Workflow AI Audit Results</h1>
+          <div class="logo">Nomadic Liberty LLC</div>
+          <h1 style="margin: 0; font-size: 28px;">Your Workflow AI Audit Results</h1>
+          <p style="margin: 10px 0 0 0; opacity: 0.9;">Personalized automation recommendations for your business</p>
         </div>
+        
+        ${report.aiGeneratedSummary ? `
+        <div class="section">
+          <div class="ai-section">
+            <div class="ai-badge">AI-POWERED INSIGHTS</div>
+            <h2 style="color: #1B365D; margin-top: 0;">Personalized Analysis</h2>
+            <p style="color: #4D4D4D; line-height: 1.6;">${escapeHtml(report.aiGeneratedSummary).replace(/\n/g, '<br/>')}</p>
+          </div>
+        </div>
+        ` : ''}
         
         ${personalizedIntro ? `
         <div class="section">
-          <h2>Personalized Assessment</h2>
-          <p>${personalizedIntro}</p>
+          <div class="section-bg">
+            <h2 style="color: #1B365D;">Personalized Assessment</h2>
+            <p style="color: #4D4D4D;">${personalizedIntro}</p>
+          </div>
         </div>
         ` : ''}
         
         <div class="section">
-          <h2>Overall Workflow Automation Level</h2>
-          <p>Your business is currently operating at a <span class="${getRatingClass(report.overallRating)}">${report.overallRating}</span> level of automation.</p>
-          
-          <div class="dots">
-            ${generateDots(report.overallScore)}
+          <div class="section-bg">
+            <h2 style="color: #1B365D;">Overall Workflow Automation Level</h2>
+            <p style="color: #4D4D4D;">Your business is currently operating at a <span class="${getRatingClass(report.overallRating)}">${report.overallRating}</span> level of automation.</p>
+            
+            <div class="dots">
+              ${generateDots(report.overallScore)}
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${report.overallScore}%"></div>
+            </div>
+            <p style="color: #4D4D4D;">Score: <span class="brand-highlight">${report.overallScore}/100</span></p>
+            
+            <p style="color: #4D4D4D;">With targeted improvements, you could save approximately <span class="time-savings">${report.totalTimeSavings}</span>.</p>
           </div>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: ${report.overallScore}%"></div>
-          </div>
-          <p>Score: ${report.overallScore}/100</p>
-          
-          <p>With targeted improvements, you could save approximately <span class="time-savings">${report.totalTimeSavings}</span>.</p>
         </div>
         
-        ${report.aiGeneratedSummary ? `
-  <div class="section">
-    <h2>AI-Generated Insights</h2>
-    <p>${escapeHtml(report.aiGeneratedSummary).replace(/\n/g, '<br/>')}</p>
-  </div>
-` : ''}
-
-
-
         <div class="section">
-          <h2>Top Recommendations:</h2>
-          <ul>
-            ${report.topRecommendations.map(rec => `<li>${rec}</li>`).join('')}
+          <h2 style="color: #1B365D;">Top Recommendations:</h2>
+          <ul style="color: #4D4D4D;">
+            ${report.topRecommendations.map(rec => `<li style="margin-bottom: 8px;">${rec}</li>`).join('')}
           </ul>
         </div>
         
         <div class="section">
-          <h2>Detailed Analysis by Area:</h2>
+          <h2 style="color: #1B365D;">Detailed Analysis by Area:</h2>
           ${report.categories.map(cat => `
             <div class="category">
-              <h3>${getCategoryName(cat.category)}</h3>
-              <p>Current automation level: <span class="${getRatingClass(cat.rating)}">${cat.rating}</span></p>
+              <h3 style="color: #1B365D; margin-top: 0;">${getCategoryName(cat.category)}</h3>
+              <p style="color: #4D4D4D;">Current automation level: <span class="${getRatingClass(cat.rating)}">${cat.rating}</span></p>
               
               <div class="dots">
                 ${generateDots(cat.score)}
@@ -106,28 +116,32 @@ export const generateReportHtml = (
               <div class="progress-bar">
                 <div class="progress-fill" style="width: ${cat.score}%"></div>
               </div>
-              <p>Score: ${cat.score}/100</p>
+              <p style="color: #4D4D4D;">Score: <span class="brand-highlight">${cat.score}/100</span></p>
               
-              <p>Potential time savings: <span class="time-savings">${cat.timeSavings}</span></p>
-              <p><strong>Recommended tools:</strong> ${cat.tools.join(', ')}</p>
-              <p><strong>Suggested improvements:</strong></p>
-              <ul>
-                ${cat.improvements.map(imp => `<li>${imp}</li>`).join('')}
+              <p style="color: #4D4D4D;">Potential time savings: <span class="time-savings">${cat.timeSavings}</span></p>
+              <p style="color: #4D4D4D;"><strong>Recommended tools:</strong> ${cat.tools.join(', ')}</p>
+              <p style="color: #4D4D4D;"><strong>Suggested improvements:</strong></p>
+              <ul style="color: #4D4D4D;">
+                ${cat.improvements.map(imp => `<li style="margin-bottom: 5px;">${imp}</li>`).join('')}
               </ul>
             </div>
           `).join('')}
         </div>
         
         <div class="section" style="text-align: center;">
-          <p><strong>Ready to enhance your workflow?</strong></p>
-          <a href="https://calendly.com/workflow-ai/discovery" class="button">Book a Free 20-Minute Consultation</a>
+          <div class="section-bg">
+            <p style="color: #1B365D; font-size: 18px; font-weight: bold;">Ready to enhance your workflow?</p>
+            <a href="https://calendly.com/workflow-ai/discovery" class="button">Book a Free 20-Minute Consultation</a>
+            <p style="color: #A8998C; font-size: 14px; margin-top: 10px;">No commitment required • Expert guidance included</p>
+          </div>
         </div>
         
         <div class="footer">
-          <p><strong>Nomadic Liberty LLC</strong></p>
-          <p>This report was generated based on your inputs to the Workflow AI Audit tool.</p>
-          <p>Have questions? Reply to this email for assistance.</p>
-          <p>© ${new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.</p>
+          <p style="margin: 0 0 10px 0;"><strong>Nomadic Liberty LLC</strong></p>
+          <p style="margin: 0 0 10px 0;">Transforming businesses through intelligent automation</p>
+          <p style="margin: 0 0 10px 0;">This report was generated based on your inputs to the Workflow AI Audit tool.</p>
+          <p style="margin: 0 0 10px 0;">Have questions? Reply to this email for assistance.</p>
+          <p style="margin: 0; opacity: 0.8;">© ${new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.</p>
         </div>
       </div>
     </body>

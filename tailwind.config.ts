@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -26,8 +25,8 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
-					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					DEFAULT: '#00A8A8',
+					foreground: '#FFFFFF'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -63,13 +62,24 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
+				// Nomadic Liberty Brand Colors
+				nomadic: {
+					teal: '#00A8A8',
+					navy: '#1B365D',
+					gray: '#4D4D4D',
+					beige: '#F5F1EB',
+					taupe: '#A8998C',
+					white: '#FFFFFF',
+					lightBlue: '#E4EEF8'
+				},
+				// Keep existing workflow colors for backwards compatibility
 				workflow: {
-					blue: '#D3E4FD',
+					blue: '#E4EEF8',
 					green: '#F2FCE2',
 					purple: '#E5DEFF',
-					purpleDark: '#9b87f5',
-					gray: '#8E9196',
-					lightGray: '#F1F1F1'
+					purpleDark: '#00A8A8', // Changed to teal
+					gray: '#A8998C', // Changed to soft taupe
+					lightGray: '#F5F1EB' // Changed to warm beige
 				}
 			},
 			borderRadius: {

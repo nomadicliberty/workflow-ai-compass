@@ -14,8 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 235 80% 60%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 180 100% 33%; /* Nomadic Teal #00A8A8 */
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -23,7 +23,7 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 235 80% 96%;
+    --accent: 180 100% 96%; /* Light teal accent */
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
@@ -31,7 +31,7 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 235 80% 60%;
+    --ring: 180 100% 33%; /* Nomadic Teal ring */
 
     --radius: 0.5rem;
 
@@ -55,8 +55,8 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 235 80% 60%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 180 100% 33%; /* Nomadic Teal */
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -93,6 +93,7 @@
   body {
     @apply bg-background text-foreground;
     font-family: Inter, system-ui, sans-serif;
+    color: #4D4D4D; /* Nomadic text gray */
   }
 
   .question-transition-enter {
@@ -124,7 +125,7 @@
   display: inline-block;
   position: relative;
   border: 3px solid;
-  border-color: #E5DEFF #E5DEFF transparent transparent;
+  border-color: #F5F1EB #F5F1EB transparent transparent; /* Nomadic beige */
   box-sizing: border-box;
   animation: rotation 1s linear infinite;
 }
@@ -140,7 +141,7 @@
   bottom: 0;
   margin: auto;
   border: 3px solid;
-  border-color: transparent transparent #9b87f5 #9b87f5;
+  border-color: transparent transparent #00A8A8 #00A8A8; /* Nomadic teal */
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -151,7 +152,7 @@
 .loader::before {
   width: 32px;
   height: 32px;
-  border-color: #D3E4FD #D3E4FD transparent transparent;
+  border-color: #E4EEF8 #E4EEF8 transparent transparent; /* Nomadic light blue */
   animation: rotation 1.5s linear infinite;
 }
 

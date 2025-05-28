@@ -13,28 +13,28 @@ export const generatePDF = async (
     const pageWidth = doc.internal.pageSize.getWidth();
     let yPos = 20;
     
-    // Add header with company branding
+    // Add header with Nomadic Liberty branding
     doc.setFontSize(20);
-    doc.setTextColor(0, 168, 168); // #00a8a8 teal color
+    doc.setTextColor(0, 168, 168); // Nomadic Teal #00A8A8
     doc.text("Workflow AI Audit Report", pageWidth / 2, yPos, { align: "center" });
     yPos += 15;
     
     doc.setFontSize(14);
-    doc.setTextColor(100, 100, 100); // Gray color
+    doc.setTextColor(27, 54, 93); // Nomadic Navy #1B365D
     doc.text("Nomadic Liberty LLC", pageWidth / 2, yPos, { align: "center" });
     yPos += 20;
     
     // Add AI-generated summary if available (prioritize over personalized assessment)
     if (report.aiGeneratedSummary) {
       doc.setFontSize(16);
-      doc.setTextColor(110, 70, 199); // Purple color for AI section
+      doc.setTextColor(27, 54, 93); // Nomadic Navy for section headers
       doc.text("AI-Generated Insights", 20, yPos);
       yPos += 10;
       
-      // Add AI badge/indicator
+      // Add AI badge/indicator with Nomadic branding
       doc.setFontSize(10);
       doc.setTextColor(255, 255, 255);
-      doc.setFillColor(110, 70, 199);
+      doc.setFillColor(0, 168, 168); // Nomadic Teal
       doc.roundedRect(20, yPos - 2, 25, 8, 2, 2, "F");
       doc.text("AI-POWERED", 22, yPos + 3);
       yPos += 15;
@@ -42,13 +42,13 @@ export const generatePDF = async (
       // Split the AI summary into multiple lines
       const splitSummary = doc.splitTextToSize(report.aiGeneratedSummary, pageWidth - 40);
       doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(77, 77, 77); // Nomadic Text Gray
       doc.text(splitSummary, 20, yPos);
       yPos += (splitSummary.length * 7) + 15;
     } else if (painPoint || techReadiness) {
       // Fallback to personalized summary if no AI summary
       doc.setFontSize(16);
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(27, 54, 93); // Nomadic Navy
       doc.text("Personalized Assessment", 20, yPos);
       yPos += 10;
       
@@ -67,6 +67,7 @@ export const generatePDF = async (
       
       const splitText = doc.splitTextToSize(personalizedText, pageWidth - 40);
       doc.setFontSize(12);
+      doc.setTextColor(77, 77, 77); // Nomadic Text Gray
       doc.text(splitText, 20, yPos);
       yPos += (splitText.length * 7) + 10;
     }
@@ -77,62 +78,65 @@ export const generatePDF = async (
       yPos = 20;
     }
     
-    // Add overall assessment with visual indicators
+    // Add overall assessment with Nomadic Liberty branding
     doc.setFontSize(16);
-    doc.setTextColor(0, 0, 0);
+    doc.setTextColor(27, 54, 93); // Nomadic Navy
     doc.text("Overall Assessment", 20, yPos);
     yPos += 10;
     
     doc.setFontSize(14);
+    doc.setTextColor(77, 77, 77); // Nomadic Text Gray
     doc.text(`Rating: ${report.overallRating}`, 20, yPos);
     yPos += 8;
     doc.text(`Score: ${report.overallScore}/100`, 20, yPos);
     yPos += 8;
     
-    // Add visual dots representation (similar to email)
+    // Add visual dots representation with Nomadic colors
     const totalDots = 5;
     const filledDots = Math.round((report.overallScore / 100) * totalDots);
     
     for (let i = 0; i < totalDots; i++) {
       const dotX = 20 + (i * 12);
       if (i < filledDots) {
-        doc.setFillColor(0, 168, 168); // Teal for filled dots
+        doc.setFillColor(0, 168, 168); // Nomadic Teal for filled dots
       } else {
-        doc.setFillColor(224, 224, 224); // Gray for empty dots
+        doc.setFillColor(245, 241, 235); // Nomadic Beige for empty dots
       }
       doc.circle(dotX, yPos + 3, 3, "F");
     }
     yPos += 10;
     
-    // Visual progress bar
-    doc.setDrawColor(200, 200, 200);
-    doc.setFillColor(230, 230, 230);
+    // Visual progress bar with Nomadic colors
+    doc.setDrawColor(168, 153, 140); // Nomadic Taupe for border
+    doc.setFillColor(245, 241, 235); // Nomadic Beige background
     doc.rect(20, yPos, 150, 8, "F");
-    doc.setFillColor(0, 168, 168); // Teal
+    doc.setFillColor(0, 168, 168); // Nomadic Teal for progress
     doc.rect(20, yPos, report.overallScore * 1.5, 8, "F");
     yPos += 15;
     
     // Time savings
     doc.setFontSize(14);
-    doc.setTextColor(0, 128, 0);
+    doc.setTextColor(0, 168, 168); // Nomadic Teal for highlights
     doc.text(`Potential Time Savings: ${report.totalTimeSavings}`, 20, yPos);
     yPos += 20;
     
     // Top recommendations
     doc.setFontSize(16);
-    doc.setTextColor(0, 0, 0);
+    doc.setTextColor(27, 54, 93); // Nomadic Navy
     doc.text("Top Recommendations:", 20, yPos);
     yPos += 10;
     
     doc.setFontSize(12);
+    doc.setTextColor(77, 77, 77); // Nomadic Text Gray
     report.topRecommendations.forEach((rec, idx) => {
       doc.text(`${idx + 1}. ${rec}`, 20, yPos);
       yPos += 8;
     });
     yPos += 15;
     
-    // Category assessments with improved formatting
+    // Category assessments with Nomadic Liberty branding
     doc.setFontSize(16);
+    doc.setTextColor(27, 54, 93); // Nomadic Navy
     doc.text("Category Assessments", 20, yPos);
     yPos += 15;
     
@@ -146,41 +150,41 @@ export const generatePDF = async (
       const categoryName = getCategoryName(category.category);
       
       doc.setFontSize(14);
-      doc.setTextColor(0, 168, 168); // Teal
+      doc.setTextColor(0, 168, 168); // Nomadic Teal
       doc.text(categoryName, 20, yPos);
       yPos += 8;
       
       // Rating and score
       doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(77, 77, 77); // Nomadic Text Gray
       doc.text(`Rating: ${category.rating} (Score: ${category.score}/100)`, 20, yPos);
       yPos += 8;
       
-      // Add visual dots for category
+      // Add visual dots for category with Nomadic colors
       const categoryFilledDots = Math.round((category.score / 100) * totalDots);
       for (let i = 0; i < totalDots; i++) {
         const dotX = 20 + (i * 12);
         if (i < categoryFilledDots) {
-          doc.setFillColor(0, 168, 168); // Teal for filled dots
+          doc.setFillColor(0, 168, 168); // Nomadic Teal for filled dots
         } else {
-          doc.setFillColor(224, 224, 224); // Gray for empty dots
+          doc.setFillColor(245, 241, 235); // Nomadic Beige for empty dots
         }
         doc.circle(dotX, yPos + 3, 3, "F");
       }
       yPos += 10;
       
-      // Visual progress bar for category
-      doc.setDrawColor(200, 200, 200);
-      doc.setFillColor(230, 230, 230);
+      // Visual progress bar for category with Nomadic colors
+      doc.setDrawColor(168, 153, 140); // Nomadic Taupe
+      doc.setFillColor(245, 241, 235); // Nomadic Beige
       doc.rect(20, yPos, 150, 5, "F");
-      doc.setFillColor(0, 168, 168); // Teal
+      doc.setFillColor(0, 168, 168); // Nomadic Teal
       doc.rect(20, yPos, category.score * 1.5, 5, "F");
       yPos += 10;
       
       // Time savings
-      doc.setTextColor(0, 128, 0);
+      doc.setTextColor(0, 168, 168); // Nomadic Teal
       doc.text(`Time Savings: ${category.timeSavings}`, 20, yPos);
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(77, 77, 77); // Nomadic Text Gray
       yPos += 8;
       
       // Recommended tools
@@ -201,33 +205,34 @@ export const generatePDF = async (
       yPos += 15;
     }
     
-    // Add call to action with better formatting
+    // Add call to action with Nomadic Liberty branding
     if (yPos > 230) {
       doc.addPage();
       yPos = 20;
     }
     
-    // Create a colored rectangle for CTA
-    doc.setFillColor(230, 245, 245); // Light teal
+    // Create a colored rectangle for CTA with Nomadic colors
+    doc.setFillColor(228, 238, 248); // Nomadic Light Blue
     doc.rect(20, yPos, pageWidth - 40, 45, "F");
     
     doc.setFontSize(14);
-    doc.setTextColor(0, 168, 168); // Teal
+    doc.setTextColor(27, 54, 93); // Nomadic Navy
     yPos += 15;
     doc.text("Ready to transform your workflow?", pageWidth / 2, yPos, { align: "center" });
     
     yPos += 12;
     doc.setFontSize(12);
+    doc.setTextColor(77, 77, 77); // Nomadic Text Gray
     doc.text("Book a free 20-minute AI consultation call", pageWidth / 2, yPos, { align: "center" });
     
     yPos += 10;
-    doc.setTextColor(0, 0, 255); // Blue for link
+    doc.setTextColor(0, 168, 168); // Nomadic Teal for link
     doc.text("https://calendly.com/workflow-ai/discovery", pageWidth / 2, yPos, { align: "center" });
     
-    // Add footer
+    // Add footer with Nomadic Liberty branding
     yPos = doc.internal.pageSize.getHeight() - 10;
     doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
+    doc.setTextColor(168, 153, 140); // Nomadic Taupe
     doc.text(`© ${new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.`, pageWidth / 2, yPos, { align: "center" });
     
     // Save the PDF
