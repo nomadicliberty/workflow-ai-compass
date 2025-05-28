@@ -33,7 +33,7 @@ export const sendReportEmail = async ({
     };
     
     // Make API call to our backend endpoint
-    const response = await fetch('/api/send-report', {
+const response = await fetch('https://workflow-ai-audit.onrender.com/api/send-report', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

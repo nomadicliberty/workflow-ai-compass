@@ -11,7 +11,16 @@ export const generateReportHtml = (
 ): string => {
   // Get personalized intro based on answers
   const personalizedIntro = generatePersonalizedIntro(painPoint, techReadiness);
-  
+  function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+
   // Build HTML email template
   return `
     <!DOCTYPE html>
@@ -68,6 +77,15 @@ export const generateReportHtml = (
           <p>With targeted improvements, you could save approximately <span class="time-savings">${report.totalTimeSavings}</span>.</p>
         </div>
         
+        ${report.aiGeneratedSummary ? `
+  <div class="section">
+    <h2>AI-Generated Insights</h2>
+    <p>${escapeHtml(report.aiGeneratedSummary).replace(/\n/g, '<br/>')}</p>
+  </div>
+` : ''}
+
+
+
         <div class="section">
           <h2>Top Recommendations:</h2>
           <ul>
