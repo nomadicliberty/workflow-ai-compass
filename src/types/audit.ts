@@ -1,4 +1,3 @@
-
 export type RatingLevel = 'Manual' | 'Partially Automated' | 'Fully Automated';
 
 export interface AuditQuestion {
@@ -38,6 +37,7 @@ export interface AuditReport {
   overallScore: number;
   topRecommendations: string[];
   totalTimeSavings: string; // Added total time savings estimate
+  aiGeneratedSummary?: string; // New field for AI-generated content
 }
 
 export const categoryLabels: Record<WorkflowCategory, string> = {

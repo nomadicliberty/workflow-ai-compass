@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AuditQuestion, AuditAnswer, AuditReport } from '../types/audit';
 import { auditQuestions, generateAuditReport } from '../data/auditQuestions';
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { sendReportEmail } from '../services/emailService';
+import { generateAIReport, transformReportForAI } from '../services/aiReportService';
 
 const AuditWizard: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(-1); // -1 for welcome screen, 0-n for questions
@@ -69,17 +71,39 @@ const AuditWizard: React.FC = () => {
     setIsGeneratingReport(true);
     
     try {
-      // Generate report
-      const generatedReport = generateAuditReport(answers);
-      setReport(generatedReport);
+      // Generate base report using existing logic
+      const baseReport = generateAuditReport(answers);
       
-      // Send email using the email service with pain point and tech readiness
+      // Get pain point for AI generation
       const painPointAnswer = answers.find(a => a.questionId === 'general-1')?.value || '';
       const techReadinessAnswer = answers.find(a => a.questionId === 'general-2')?.value || '';
       
+      // Transform report data for AI backend
+      const reportScores = transformReportForAI(baseReport);
+      
+      try {
+        // Try to get AI-generated summary
+        const aiSummary = await generateAIReport(reportScores, painPointAnswer);
+        baseReport.aiGeneratedSummary = aiSummary;
+        
+        toast({
+          title: "AI Report Generated!",
+          description: "Your personalized workflow assessment has been enhanced with AI insights.",
+        });
+      } catch (aiError) {
+        console.warn("Failed to generate AI summary, using fallback:", aiError);
+        toast({
+          title: "Report Generated",
+          description: "Your workflow assessment is ready (using standard analysis).",
+        });
+      }
+      
+      setReport(baseReport);
+      
+      // Send email with the report (including AI summary if available)
       const emailSent = await sendReportEmail({
         userEmail: email,
-        report: generatedReport,
+        report: baseReport,
         painPoint: painPointAnswer,
         techReadiness: techReadinessAnswer
       });

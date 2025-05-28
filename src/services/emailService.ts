@@ -20,18 +20,25 @@ export const sendReportEmail = async ({
   try {
     console.log(`Sending report email to ${userEmail} via API endpoint`);
     
+    // Include AI-generated summary in the email data
+    const emailData = {
+      userEmail,
+      report: {
+        ...report,
+        // Ensure AI summary is included if available
+        aiGeneratedSummary: report.aiGeneratedSummary
+      },
+      painPoint,
+      techReadiness
+    };
+    
     // Make API call to our backend endpoint
-    const response = await fetch('https://workflow-ai-audit.onrender.com/api/send-report', {
+    const response = await fetch('/api/send-report', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        userEmail,
-        report,
-        painPoint,
-        techReadiness
-      }),
+      body: JSON.stringify(emailData),
     });
 
     if (!response.ok) {

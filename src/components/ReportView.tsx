@@ -4,13 +4,14 @@ import { AuditReport, AuditAnswer } from '../types/audit';
 import { Button } from '@/components/ui/button';
 import { RotateCcw } from 'lucide-react';
 
-// Import our new components
+// Import our components
 import PersonalizedSummary from './report/PersonalizedSummary';
 import OverallSummary from './report/OverallSummary';
 import BookCallSection from './report/BookCallSection';
 import CategoryTabs from './report/CategoryTabs';
 import ExportSection from './report/ExportSection';
 import CallToAction from './report/CallToAction';
+import AISummaryCard from './report/AISummaryCard';
 
 interface ReportViewProps {
   report: AuditReport;
@@ -29,15 +30,22 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail, a
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold mb-4">Your Workflow Audit Results</h1>
         <p className="text-gray-600 max-w-2xl mx-auto">
-          Based on your responses, we've identified specific areas where AI and automation can help improve your business operations.
+          Based on your responses, we've analyzed your business operations and generated personalized recommendations.
         </p>
       </div>
       
-      {/* Personalized Summary */}
-      <PersonalizedSummary 
-        painPointAnswer={painPointAnswer} 
-        techReadinessAnswer={techReadinessAnswer} 
-      />
+      {/* AI-Generated Summary (if available) */}
+      {report.aiGeneratedSummary && (
+        <AISummaryCard aiSummary={report.aiGeneratedSummary} />
+      )}
+      
+      {/* Personalized Summary (fallback if no AI summary) */}
+      {!report.aiGeneratedSummary && (
+        <PersonalizedSummary 
+          painPointAnswer={painPointAnswer} 
+          techReadinessAnswer={techReadinessAnswer} 
+        />
+      )}
       
       {/* Overall Summary Card */}
       <OverallSummary report={report} />
