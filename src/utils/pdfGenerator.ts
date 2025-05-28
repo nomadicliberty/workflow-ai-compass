@@ -23,8 +23,20 @@ export const generatePDF = async (
     doc.text("Nomadic Liberty LLC", pageWidth / 2, yPos, { align: "center" });
     yPos += 20;
     
-    // Add personalized summary if available
-    if (painPoint || techReadiness) {
+    // Add AI-generated summary if available (prioritize over personalized assessment)
+    if (report.aiGeneratedSummary) {
+      doc.setFontSize(16);
+      doc.setTextColor(0, 0, 0);
+      doc.text("AI-Powered Analysis", 20, yPos);
+      yPos += 10;
+      
+      // Split the AI summary into multiple lines
+      const splitSummary = doc.splitTextToSize(report.aiGeneratedSummary, pageWidth - 40);
+      doc.setFontSize(12);
+      doc.text(splitSummary, 20, yPos);
+      yPos += (splitSummary.length * 7) + 15;
+    } else if (painPoint || techReadiness) {
+      // Fallback to personalized summary if no AI summary
       doc.setFontSize(16);
       doc.setTextColor(0, 0, 0);
       doc.text("Personalized Assessment", 20, yPos);
@@ -47,6 +59,12 @@ export const generatePDF = async (
       doc.setFontSize(12);
       doc.text(splitText, 20, yPos);
       yPos += (splitText.length * 7) + 10;
+    }
+    
+    // Check if we need a new page
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 20;
     }
     
     // Add overall assessment

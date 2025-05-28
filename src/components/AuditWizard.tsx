@@ -82,9 +82,17 @@ const AuditWizard: React.FC = () => {
       const reportScores = transformReportForAI(baseReport);
       
       try {
-        // Try to get AI-generated summary
-        const aiSummary = await generateAIReport(reportScores, painPointAnswer);
+        // Try to get AI-generated summary with timeout
+        console.log('Attempting to generate AI summary...');
+        const aiSummary = await Promise.race([
+          generateAIReport(reportScores, painPointAnswer),
+          new Promise<string>((_, reject) => 
+            setTimeout(() => reject(new Error('AI generation timeout')), 15000)
+          )
+        ]);
+        
         baseReport.aiGeneratedSummary = aiSummary;
+        console.log('AI summary generated successfully, length:', aiSummary.length);
         
         toast({
           title: "AI Report Generated!",
@@ -100,20 +108,35 @@ const AuditWizard: React.FC = () => {
       
       setReport(baseReport);
       
-      // Send email with the report (including AI summary if available)
-      const emailSent = await sendReportEmail({
-        userEmail: email,
-        report: baseReport,
-        painPoint: painPointAnswer,
-        techReadiness: techReadinessAnswer
-      });
-      
-      if (emailSent) {
-        toast({
-          title: "Report Sent!",
-          description: "Your personalized workflow audit has been sent to your email.",
-        });
-      } else {
+      // Send email with the report (including AI summary if available) with timeout
+      try {
+        console.log('Attempting to send email...');
+        const emailSent = await Promise.race([
+          sendReportEmail({
+            userEmail: email,
+            report: baseReport,
+            painPoint: painPointAnswer,
+            techReadiness: techReadinessAnswer
+          }),
+          new Promise<boolean>((_, reject) => 
+            setTimeout(() => reject(new Error('Email sending timeout')), 20000)
+          )
+        ]);
+        
+        if (emailSent) {
+          toast({
+            title: "Report Sent!",
+            description: "Your personalized workflow audit has been sent to your email.",
+          });
+        } else {
+          toast({
+            title: "Email Delivery Issue",
+            description: "We generated your report but had trouble sending the email. You can still view it here.",
+            variant: "destructive",
+          });
+        }
+      } catch (emailError) {
+        console.error("Email sending failed:", emailError);
         toast({
           title: "Email Delivery Issue",
           description: "We generated your report but had trouble sending the email. You can still view it here.",

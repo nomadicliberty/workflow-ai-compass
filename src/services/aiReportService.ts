@@ -34,8 +34,8 @@ export const generateAIReport = async (
       keyChallenge
     };
 
-    // TODO: Replace with your actual backend URL
-      const response = await fetch('https://workflow-ai-audit.onrender.com/api/generateAiSummary', {
+    // Updated to use the correct backend URL
+    const response = await fetch('https://workflow-ai-audit.onrender.com/api/generateAiSummary', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

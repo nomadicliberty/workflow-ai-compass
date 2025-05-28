@@ -32,8 +32,16 @@ export const sendReportEmail = async ({
       techReadiness
     };
     
-    // Make API call to our backend endpoint
-const response = await fetch('https://workflow-ai-audit.onrender.com/api/send-report', {
+    console.log('Email payload size:', JSON.stringify(emailData).length, 'characters');
+    
+    // Trim AI summary if it's too large (over 5000 characters)
+    if (emailData.report.aiGeneratedSummary && emailData.report.aiGeneratedSummary.length > 5000) {
+      console.log('Trimming AI summary for email - original length:', emailData.report.aiGeneratedSummary.length);
+      emailData.report.aiGeneratedSummary = emailData.report.aiGeneratedSummary.substring(0, 4900) + '...';
+    }
+    
+    // Make API call to the correct backend endpoint
+    const response = await fetch('https://workflow-ai-audit.onrender.com/api/send-report', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -42,11 +50,18 @@ const response = await fetch('https://workflow-ai-audit.onrender.com/api/send-re
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (parseError) {
+        errorData = { error: 'Failed to parse error response' };
+      }
       console.error("API error:", errorData);
       return false;
     }
 
+    const result = await response.json();
+    console.log('Email sent successfully:', result);
     return true;
   } catch (error) {
     console.error("Error sending email:", error);
