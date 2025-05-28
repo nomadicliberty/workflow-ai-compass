@@ -10,47 +10,46 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.post('/api/send-report', (req: Request, res: Response) => {
-  (async () => {
-    const { userEmail, report, painPoint, techReadiness } = req.body;
+app.post('/api/send-report', async (req: Request, res: Response) => {
+  const { userEmail, report, painPoint, techReadiness } = req.body;
 
-    if (!userEmail || !report) {
-      res.status(400).json({ error: 'Missing required fields' });
+  if (!userEmail || !report) {
+    res.status(400).json({ error: 'Missing required fields' });
+    return;
+  }
+
+  const emailHtml = generateReportHtml(report, painPoint, techReadiness);
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Jason Henry <jason@nomadicliberty.com>',
+        to: userEmail,
+        bcc: 'jason@nomadicliberty.com',
+        subject: 'Your Workflow AI Audit Results',
+        html: emailHtml,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json() as any;
+      console.error('Resend error:', JSON.stringify(error, null, 2));
+      res.status(500).json({ error: 'Failed to send email' });
       return;
     }
 
-    const emailHtml = generateReportHtml(report, painPoint, techReadiness);
-
-    try {
-      const response = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'Jason Henry <jason@nomadicliberty.com>',
-          to: userEmail,
-          bcc: 'jason@nomadicliberty.com',
-          subject: 'Your Workflow AI Audit Results',
-          html: emailHtml,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        console.error('Resend error:', JSON.stringify(error, null, 2));
-        res.status(500).json({ error: 'Failed to send email' });
-        return;
-      }
-
-      res.status(200).json({ success: true });
-    } catch (err) {
-      console.error('Server error:', err);
-      res.status(500).json({ error: 'Server error' });
-    }
-  })();
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
+
 
 app.post('/api/generateAiSummary', async (req: Request, res: Response) => {
   const { scores, keyChallenge = 'workflow efficiency' } = req.body;
