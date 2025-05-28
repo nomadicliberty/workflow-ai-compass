@@ -52,6 +52,45 @@ app.post('/api/send-report', (req: Request, res: Response) => {
   })();
 });
 
+app.post('/api/generateAiSummary', async (req: Request, res: Response) => {
+  const { scores, keyChallenge = 'workflow efficiency' } = req.body;
+
+  if (!scores || !scores.byCategory) {
+    return res.status(400).json({ error: 'Missing scores data' });
+  }
+
+  const prompt = buildPrompt(scores, keyChallenge);
+
+  try {
+    const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7
+      })
+    });
+
+    if (!openaiResponse.ok) {
+      const err = await openaiResponse.json();
+      console.error("OpenAI error:", err);
+      return res.status(500).json({ error: 'Failed to get summary from GPT' });
+    }
+
+    const json = await openaiResponse.json();
+    const summary = json.choices?.[0]?.message?.content || 'No summary returned.';
+    res.json({ summary });
+  } catch (error) {
+    console.error("GPT error:", error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
 const generateReportHtml = (
   report: any,
   painPoint?: string,
@@ -210,6 +249,33 @@ const getCategoryName = (category: string): string => {
   };
   return names[category] || category;
 };
+
+function buildPrompt(scores: any, keyChallenge: string): string {
+  const { overall, totalTimeSavings, byCategory } = scores;
+
+  const categories = Object.entries(byCategory)
+    .map(([name, data]: any) => `- ${name}: ${data.score}/100 (${data.level})`)
+    .join('\n');
+
+  return `
+You are an AI automation consultant generating a friendly, human-readable report for a small business.
+
+Their biggest operational challenge is: ${keyChallenge}  
+Their overall automation score is ${overall}/100  
+They could save about ${totalTimeSavings} hours per week with improvements.
+
+Category breakdown:
+${categories}
+
+For each category:
+- Explain what the score means in plain terms
+- Give 2–3 specific, non-jargony suggestions
+- Recommend one tool or service to try
+
+End with a short paragraph explaining how Nomadic Liberty, the consultancy that provided this audit, can help implement these improvements.
+`;
+}
+
 
 
 const PORT = process.env.PORT || 3001;
