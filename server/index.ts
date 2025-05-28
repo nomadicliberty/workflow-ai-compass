@@ -25,7 +25,7 @@ app.post('/api/send-report', (req: Request, res: Response) => {
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY?.trim()}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -79,7 +79,7 @@ app.post('/api/generateAiSummary', (req: Request, res: Response) => {
       const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY?.trim()}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
