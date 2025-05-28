@@ -76,12 +76,13 @@ app.post('/api/generateAiSummary', async (req: Request, res: Response) => {
     });
 
     if (!openaiResponse.ok) {
-      const err = await openaiResponse.json();
-      console.error("OpenAI error:", err);
-      return res.status(500).json({ error: 'Failed to get summary from GPT' });
-    }
+  const err = await openaiResponse.json() as any;
+  console.error("OpenAI error:", err);
+  return res.status(500).json({ error: 'Failed to get summary from GPT' });
+}
 
-    const json = await openaiResponse.json();
+
+  const json = await openaiResponse.json() as any;
     const summary = json.choices?.[0]?.message?.content || 'No summary returned.';
     res.json({ summary });
   } catch (error) {
