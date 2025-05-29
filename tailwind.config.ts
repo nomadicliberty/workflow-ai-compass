@@ -73,14 +73,14 @@ export default {
 					white: '#FFFFFF',
 					lightBlue: '#E4EEF8'
 				},
-				// Update workflow colors to use brand colors only - no purple
+				// Updated workflow colors to use brand colors only - NO PURPLE
 				workflow: {
 					blue: '#E4EEF8',
 					green: '#F2FCE2',
-					teal: '#00A8A8', // Changed from purple to teal
-					tealDark: '#00A8A8', // Changed from purpleDark to teal
-					gray: '#A8998C', // Changed to soft taupe
-					lightGray: '#F5F1EB' // Changed to warm beige
+					teal: '#00A8A8',
+					tealDark: '#1B365D', // Using navy for dark state
+					gray: '#A8998C',
+					lightGray: '#F5F1EB'
 				}
 			},
 			borderRadius: {

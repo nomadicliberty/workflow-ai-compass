@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Mail, FileDown } from 'lucide-react';
@@ -44,7 +45,7 @@ const ExportSection: React.FC<ExportSectionProps> = ({
       Top Recommendations:
       ${report.topRecommendations.map((rec, i) => `${i+1}. ${rec}`).join('\n      ')}
       
-      Book a free discovery call: https://calendly.com/workflow-ai/discovery
+      Book a free consultation: https://calendar.app.google/fDRgarRXA42zzqEo8
       
       © ${new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.
     `;
@@ -123,7 +124,7 @@ const ExportSection: React.FC<ExportSectionProps> = ({
   };
 
   return (
-    <div className="mt-10 flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0 bg-gray-50 p-6 rounded-lg border border-gray-200">
+    <div className="mt-10 flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0 bg-nomadic-beige p-6 rounded-lg border border-nomadic-taupe">
       <div className="flex-1">
         <h3 className="text-xl font-semibold mb-2">Save Your Results</h3>
         <p className="text-gray-600 mb-4 md:mb-0">Download your report or have it sent to your email</p>
@@ -144,7 +145,7 @@ const ExportSection: React.FC<ExportSectionProps> = ({
           <input
             type="email"
             placeholder="Enter your email"
-            className="px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-workflow-purpleDark"
+            className="px-3 py-2 rounded-md border border-nomadic-taupe focus:outline-none focus:ring-2 focus:ring-nomadic-teal"
             value={emailInput}
             onChange={(e) => setEmailInput(e.target.value)}
             required

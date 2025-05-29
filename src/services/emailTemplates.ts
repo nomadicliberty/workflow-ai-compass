@@ -1,4 +1,3 @@
-
 import { AuditReport, WorkflowCategory, RatingLevel } from "../types/audit";
 
 /**
@@ -131,7 +130,7 @@ export const generateReportHtml = (
         <div class="section" style="text-align: center;">
           <div class="section-bg">
             <p style="color: #1B365D; font-size: 18px; font-weight: bold;">Ready to enhance your workflow?</p>
-            <a href="https://calendly.com/workflow-ai/discovery" class="button">Book a Free 20-Minute Consultation</a>
+            <a href="https://calendar.app.google/fDRgarRXA42zzqEo8" class="button">Book a Free Consultation</a>
             <p style="color: #A8998C; font-size: 14px; margin-top: 10px;">No commitment required • Expert guidance included</p>
           </div>
         </div>

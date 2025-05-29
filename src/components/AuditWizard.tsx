@@ -215,7 +215,7 @@ const AuditWizard: React.FC = () => {
             Our AI is processing your responses and generating personalized recommendations.
           </p>
           {generationStatus && (
-            <div className="text-sm text-blue-600 font-medium">
+            <div className="text-sm text-nomadic-teal font-medium">
               {generationStatus}
             </div>
           )}
@@ -257,7 +257,7 @@ const AuditWizard: React.FC = () => {
           <Button 
             onClick={handleNextQuestion}
             disabled={!isCurrentQuestionAnswered()}
-            className="bg-workflow-purpleDark hover:bg-purple-700"
+            className="bg-nomadic-teal hover:bg-nomadic-navy text-white"
           >
             {currentStep < totalSteps - 1 ? (
               <>Next <ArrowRight className="ml-2 h-4 w-4" /></>

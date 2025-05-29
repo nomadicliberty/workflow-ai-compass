@@ -8,25 +8,25 @@ const CallToAction: React.FC = () => {
   const { toast } = useToast();
 
   const handleBookCall = () => {
-    // In a real app, this would open the booking calendar
-    window.open('https://calendly.com/workflow-ai/discovery', '_blank');
+    // Updated booking URL
+    window.open('https://calendar.app.google/fDRgarRXA42zzqEo8', '_blank');
     
     toast({
       title: "Opening booking calendar",
-      description: "You'll be able to schedule a free 20-minute AI consultation call.",
+      description: "You'll be able to schedule a free consultation call.",
     });
   };
 
   return (
-    <div className="mt-10 text-center bg-workflow-purpleDark bg-opacity-10 p-6 rounded-lg border border-workflow-purpleDark">
+    <div className="mt-10 text-center bg-nomadic-lightBlue bg-opacity-10 p-6 rounded-lg border border-nomadic-teal">
       <h3 className="text-xl font-semibold mb-3">Ready to transform your workflow?</h3>
       <p className="text-gray-700 mb-5">
-        Book a free 20-minute AI consultation call to discuss how we can help implement these recommendations.
+        Book a free consultation call to discuss how we can help implement these recommendations.
       </p>
       <Button 
         onClick={handleBookCall}
         size="lg"
-        className="bg-workflow-purpleDark hover:bg-purple-700"
+        className="bg-nomadic-teal hover:bg-nomadic-navy text-white"
       >
         <Calendar className="mr-2 h-4 w-4" />
         Schedule Your Free Consultation

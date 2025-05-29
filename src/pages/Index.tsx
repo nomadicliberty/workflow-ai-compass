@@ -5,16 +5,16 @@ import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const handleBookCall = () => {
-    window.open('https://calendly.com/workflow-ai/discovery', '_blank');
+    window.open('https://calendar.app.google/fDRgarRXA42zzqEo8', '_blank');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-workflow-blue bg-opacity-10 pb-16">
+    <div className="min-h-screen bg-gradient-to-b from-white to-nomadic-lightBlue bg-opacity-10 pb-16">
       <div className="max-w-screen-xl mx-auto">
         <header className="py-6 px-4 sm:px-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-800 flex items-center">
-              <span className="text-workflow-purpleDark mr-2">Workflow</span> AI Audit
+              <span className="text-nomadic-teal mr-2">Workflow</span> AI Audit
             </h1>
             <div className="flex items-center space-x-4">
               <div className="hidden md:block text-sm text-gray-600">
@@ -23,10 +23,10 @@ const Index = () => {
               <Button 
                 variant="outline" 
                 onClick={handleBookCall}
-                className="text-workflow-purpleDark border-workflow-purpleDark"
+                className="text-nomadic-teal border-nomadic-teal hover:bg-nomadic-teal hover:text-white"
               >
                 <Calendar className="mr-2 h-4 w-4" />
-                Book a Demo
+                Free Consultation
               </Button>
             </div>
           </div>
@@ -40,7 +40,7 @@ const Index = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
               <h2 className="text-xl font-bold text-gray-800 flex items-center">
-                <span className="text-workflow-purpleDark mr-2">Workflow</span> AI Audit
+                <span className="text-nomadic-teal mr-2">Workflow</span> AI Audit
               </h2>
               <p className="text-sm text-gray-500 mt-1">
                 Helping small businesses save time with AI & automation
