@@ -1,3 +1,4 @@
+
 import { AuditReport, WorkflowCategory, RatingLevel } from "../types/audit";
 
 /**
@@ -18,7 +19,6 @@ export const generateReportHtml = (
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
-
 
   // Build HTML email template with Nomadic Liberty branding
   return `
@@ -130,7 +130,7 @@ export const generateReportHtml = (
         <div class="section" style="text-align: center;">
           <div class="section-bg">
             <p style="color: #1B365D; font-size: 18px; font-weight: bold;">Ready to enhance your workflow?</p>
-            <a href="https://calendar.app.google/fDRgarRXA42zzqEo8" class="button">Book a Free Consultation</a>
+            <a href="https://calendar.app.google/fDRgarRXA42zzqEo8" class="button">Schedule Your Free Consultation</a>
             <p style="color: #A8998C; font-size: 14px; margin-top: 10px;">No commitment required • Expert guidance included</p>
           </div>
         </div>
@@ -140,6 +140,7 @@ export const generateReportHtml = (
           <p style="margin: 0 0 10px 0;">Transforming businesses through intelligent automation</p>
           <p style="margin: 0 0 10px 0;">This report was generated based on your inputs to the Workflow AI Audit tool.</p>
           <p style="margin: 0 0 10px 0;">Have questions? Reply to this email for assistance.</p>
+          <p style="margin: 0 0 15px 0;">Best regards,<br/>Jason Henry<br/>Nomadic Liberty LLC</p>
           <p style="margin: 0; opacity: 0.8;">© ${new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.</p>
         </div>
       </div>

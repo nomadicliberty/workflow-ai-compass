@@ -1,4 +1,3 @@
-
 import { jsPDF } from "jspdf";
 import { AuditReport } from "../types/audit";
 
@@ -223,11 +222,11 @@ export const generatePDF = async (
     yPos += 12;
     doc.setFontSize(12);
     doc.setTextColor(77, 77, 77); // Nomadic Text Gray
-    doc.text("Book a free 20-minute AI consultation call", pageWidth / 2, yPos, { align: "center" });
+    doc.text("Book a free consultation call", pageWidth / 2, yPos, { align: "center" });
     
     yPos += 10;
     doc.setTextColor(0, 168, 168); // Nomadic Teal for link
-    doc.text("https://calendly.com/workflow-ai/discovery", pageWidth / 2, yPos, { align: "center" });
+    doc.text("https://calendar.app.google/fDRgarRXA42zzqEo8", pageWidth / 2, yPos, { align: "center" });
     
     // Add footer with Nomadic Liberty branding
     yPos = doc.internal.pageSize.getHeight() - 10;
