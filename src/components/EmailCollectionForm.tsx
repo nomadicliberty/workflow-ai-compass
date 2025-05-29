@@ -43,12 +43,13 @@ const EmailCollectionForm: React.FC<EmailCollectionFormProps> = ({ onSubmit, isL
     }
     
     setIsValid(true);
+    console.log('🔥 EmailCollectionForm: Submitting email:', email);
     onSubmit(email);
   };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 animate-fade-in">
-      <h2 className="text-2xl font-bold mb-6 text-center text-workflow-purpleDark">
+      <h2 className="text-2xl font-bold mb-6 text-center text-nomadic-navy">
         Almost there!
       </h2>
       
@@ -81,7 +82,7 @@ const EmailCollectionForm: React.FC<EmailCollectionFormProps> = ({ onSubmit, isL
         <div className="pt-2">
           <Button 
             type="submit" 
-            className="w-full bg-workflow-purpleDark hover:bg-purple-700"
+            className="w-full bg-nomadic-teal hover:bg-nomadic-navy text-white"
             disabled={isLoading}
           >
             {isLoading ? (

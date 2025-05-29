@@ -68,6 +68,9 @@ const AuditWizard: React.FC = () => {
   };
 
   const handleEmailSubmit = async (email: string) => {
+    console.log('🔥 AuditWizard: handleEmailSubmit called with email:', email);
+    console.log('🔥 AuditWizard: aiGenerationInProgress.current:', aiGenerationInProgress.current);
+    
     // Prevent duplicate calls
     if (aiGenerationInProgress.current) {
       console.log('🔄 AI generation already in progress, skipping duplicate call');
@@ -188,6 +191,7 @@ const AuditWizard: React.FC = () => {
       setGenerationStatus('');
       setShowEmailForm(false);
       aiGenerationInProgress.current = false;
+      console.log('🏁 Report generation process completed');
     }
   };
 
