@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AuditQuestion, AuditAnswer, AuditReport } from '../types/audit';
 import { auditQuestions, generateAuditReport } from '../data/auditQuestions';
@@ -13,7 +14,7 @@ import { sendReportEmail } from '../services/emailService';
 import { generateAIReport, transformReportForAI } from '../services/aiReportService';
 
 const AuditWizard: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState(-1); // -1 for welcome screen, 0-n for questions
+  const [currentStep, setCurrentStep] = useState(-1);
   const [answers, setAnswers] = useState<AuditAnswer[]>([]);
   const [report, setReport] = useState<AuditReport | null>(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
@@ -32,7 +33,6 @@ const AuditWizard: React.FC = () => {
     if (currentStep < totalSteps - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Show email collection form
       setShowEmailForm(true);
     }
   };
@@ -44,16 +44,13 @@ const AuditWizard: React.FC = () => {
   };
 
   const handleAnswer = (answer: AuditAnswer) => {
-    // Update answers
     setAnswers(prev => {
-      // Check if we're updating an existing answer
       const existingIndex = prev.findIndex(a => a.questionId === answer.questionId);
       if (existingIndex !== -1) {
         const updated = [...prev];
         updated[existingIndex] = answer;
         return updated;
       }
-      // Add new answer
       return [...prev, answer];
     });
   };
@@ -72,25 +69,29 @@ const AuditWizard: React.FC = () => {
     setGenerationStatus('Analyzing your responses...');
     
     try {
+      console.log('🏁 Starting report generation process...');
+      
       // Generate base report using existing logic
       const baseReport = generateAuditReport(answers);
+      console.log('📊 Base report generated:', baseReport);
       
       // Get pain point and tech readiness for AI generation
       const painPointAnswer = answers.find(a => a.questionId === 'general-1')?.value || '';
       const techReadinessAnswer = answers.find(a => a.questionId === 'general-2')?.value || '';
       
       console.log('🔍 Extracted user inputs:');
-      console.log('Pain Point:', painPointAnswer);
-      console.log('Tech Readiness:', techReadinessAnswer);
+      console.log('- Pain Point:', painPointAnswer);
+      console.log('- Tech Readiness:', techReadinessAnswer);
       
       // Transform report data for AI backend
       const reportScores = transformReportForAI(baseReport);
+      console.log('📈 Transformed scores for AI:', reportScores);
       
+      // Try to get AI-generated summary
       try {
         setGenerationStatus('Generating AI-powered insights...');
-        console.log('🚀 Starting AI summary generation...');
+        console.log('🤖 Calling AI generation service...');
         
-        // Try to get AI-generated summary with timeout and better error handling
         const aiSummary = await Promise.race([
           generateAIReport(reportScores, painPointAnswer, techReadinessAnswer),
           new Promise<string>((_, reject) => 
@@ -98,15 +99,25 @@ const AuditWizard: React.FC = () => {
           )
         ]);
         
-        baseReport.aiGeneratedSummary = aiSummary;
-        console.log('✅ AI summary successfully integrated into report');
-        
-        toast({
-          title: "AI Report Generated!",
-          description: "Your personalized workflow assessment has been enhanced with AI insights.",
+        console.log('✅ AI summary received:', {
+          length: aiSummary?.length || 0,
+          preview: aiSummary?.substring(0, 100) + '...'
         });
+        
+        if (aiSummary && aiSummary.trim()) {
+          baseReport.aiGeneratedSummary = aiSummary;
+          console.log('🎯 AI summary successfully attached to report');
+          
+          toast({
+            title: "AI Report Generated!",
+            description: "Your personalized workflow assessment has been enhanced with AI insights.",
+          });
+        } else {
+          console.warn('⚠️ AI summary is empty or invalid:', aiSummary);
+          throw new Error('Empty AI response');
+        }
       } catch (aiError) {
-        console.warn("⚠️ Failed to generate AI summary, using fallback:", aiError);
+        console.error("❌ AI generation failed:", aiError);
         setGenerationStatus('Using standard analysis...');
         toast({
           title: "Report Generated",
@@ -114,6 +125,13 @@ const AuditWizard: React.FC = () => {
         });
       }
       
+      console.log('📋 Final report object:', {
+        hasAISummary: !!baseReport.aiGeneratedSummary,
+        overallScore: baseReport.overallScore,
+        categoriesCount: baseReport.categories.length
+      });
+      
+      // Set the report BEFORE trying to send email
       setReport(baseReport);
       
       // Send email with the report
@@ -150,7 +168,7 @@ const AuditWizard: React.FC = () => {
       } catch (emailError) {
         console.error("❌ Email sending failed:", emailError);
         toast({
-          title: "Email Delivery Issue",
+          title: "Email Delivery Issue", 
           description: "We generated your report but had trouble sending the email. You can still view it here.",
           variant: "destructive",
         });
@@ -169,7 +187,6 @@ const AuditWizard: React.FC = () => {
     }
   };
 
-  // Check if current question has been answered
   const isCurrentQuestionAnswered = () => {
     if (currentStep < 0 || currentStep >= totalSteps) return true;
     return answers.some(a => a.questionId === auditQuestions[currentStep].id);

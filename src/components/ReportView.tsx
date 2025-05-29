@@ -25,6 +25,13 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail, a
   const painPointAnswer = allAnswers?.find(a => a.questionId === 'general-1')?.value || '';
   const techReadinessAnswer = allAnswers?.find(a => a.questionId === 'general-2')?.value || '';
   
+  console.log('📄 ReportView rendered with:', {
+    hasReport: !!report,
+    hasAISummary: !!report?.aiGeneratedSummary,
+    aiSummaryLength: report?.aiGeneratedSummary?.length || 0,
+    aiSummaryPreview: report?.aiGeneratedSummary?.substring(0, 50) + '...'
+  });
+  
   return (
     <div className="animate-fade-in">
       <div className="text-center mb-8">
@@ -35,16 +42,22 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail, a
       </div>
       
       {/* AI-Generated Summary (if available) */}
-      {report.aiGeneratedSummary && (
-        <AISummaryCard aiSummary={report.aiGeneratedSummary} />
+      {report.aiGeneratedSummary && report.aiGeneratedSummary.trim() && (
+        <>
+          <AISummaryCard aiSummary={report.aiGeneratedSummary} />
+          {console.log('✅ Rendering AI Summary Card with content')}
+        </>
       )}
       
       {/* Personalized Summary (fallback if no AI summary) */}
-      {!report.aiGeneratedSummary && (
-        <PersonalizedSummary 
-          painPointAnswer={painPointAnswer} 
-          techReadinessAnswer={techReadinessAnswer} 
-        />
+      {(!report.aiGeneratedSummary || !report.aiGeneratedSummary.trim()) && (
+        <>
+          <PersonalizedSummary 
+            painPointAnswer={painPointAnswer} 
+            techReadinessAnswer={techReadinessAnswer} 
+          />
+          {console.log('⚠️ Rendering fallback PersonalizedSummary - no AI content')}
+        </>
       )}
       
       {/* Overall Summary Card */}

@@ -19,13 +19,26 @@ app.post('/api/send-report', (req: Request, res: Response) => {
       return;
     }
 
+    // Check for Resend API key
+    const resendApiKey = process.env.RESEND_API_KEY?.trim();
+    if (!resendApiKey) {
+      console.error('❌ RESEND_API_KEY environment variable is not set');
+      res.status(500).json({ error: 'Email service configuration error' });
+      return;
+    }
+
+    console.log('📧 Preparing to send email with Resend API...');
+    console.log('- User email:', userEmail);
+    console.log('- Has AI summary:', !!report.aiGeneratedSummary);
+    console.log('- API key length:', resendApiKey.length);
+
     const emailHtml = generateReportHtml(report, painPoint, techReadiness);
 
     try {
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          "Authorization": `Bearer ${process.env.OPENAI_API_KEY?.trim()}`,
+          "Authorization": `Bearer ${resendApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -39,20 +52,32 @@ app.post('/api/send-report', (req: Request, res: Response) => {
 
       if (!response.ok) {
         const error = await response.json();
-        console.error('Resend error:', JSON.stringify(error, null, 2));
-        res.status(500).json({ error: 'Failed to send email' });
+        console.error('❌ Resend API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: JSON.stringify(error, null, 2)
+        });
+        
+        // Provide more specific error messages
+        if (response.status === 401 || response.status === 403) {
+          res.status(500).json({ error: 'Email service authentication failed' });
+        } else if (response.status === 429) {
+          res.status(500).json({ error: 'Email rate limit exceeded, please try again later' });
+        } else {
+          res.status(500).json({ error: 'Failed to send email' });
+        }
         return;
       }
 
+      const result = await response.json();
+      console.log('✅ Email sent successfully:', result);
       res.status(200).json({ success: true });
     } catch (err) {
-      console.error('Server error:', err);
+      console.error('❌ Server error sending email:', err);
       res.status(500).json({ error: 'Server error' });
     }
   })();
 });
-
-
 
 app.post('/api/generateAiSummary', (req: Request, res: Response) => {
   (async () => {
@@ -110,8 +135,6 @@ app.post('/api/generateAiSummary', (req: Request, res: Response) => {
   })();
 });
 
-
-
 const generateReportHtml = (
   report: any,
   painPoint?: string,
@@ -134,6 +157,16 @@ const generateReportHtml = (
     }
   }
 
+  // Add AI-generated summary section if available
+  const aiSummarySection = report.aiGeneratedSummary ? `
+    <div class="section">
+      <h2>AI-Generated Insights</h2>
+      <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #00A8A8;">
+        <p style="white-space: pre-line; line-height: 1.6;">${report.aiGeneratedSummary}</p>
+      </div>
+    </div>
+  ` : '';
+
   return `
     <!DOCTYPE html>
     <html>
@@ -141,23 +174,23 @@ const generateReportHtml = (
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 0; background-color: #ffffff; }
-        .header { background-color: #6e46c7; color: white; padding: 20px; text-align: center; }
+        .header { background-color: #1B365D; color: white; padding: 20px; text-align: center; }
         .logo { max-width: 200px; margin-bottom: 10px; }
         .section { margin-bottom: 30px; padding: 0 20px; }
-        .category { margin-bottom: 20px; border-left: 4px solid #6e46c7; padding-left: 15px; }
+        .category { margin-bottom: 20px; border-left: 4px solid #00A8A8; padding-left: 15px; }
         .rating { display: inline-block; padding: 5px 10px; border-radius: 20px; font-size: 14px; font-weight: bold; margin: 5px 0; }
         .manual { background-color: #fff4e6; color: #ff8b00; }
         .partial { background-color: #e6f4ff; color: #0066cc; }
         .automated { background-color: #e6fff4; color: #00cc66; }
-        .time-savings { font-weight: bold; color: #6e46c7; }
+        .time-savings { font-weight: bold; color: #00A8A8; }
         .progress-bar { height: 8px; background-color: #f1f1f1; border-radius: 4px; margin: 10px 0; }
-        .progress-fill { height: 100%; background-color: #6e46c7; border-radius: 4px; }
+        .progress-fill { height: 100%; background-color: #00A8A8; border-radius: 4px; }
         .dots { display: flex; margin: 10px 0; }
         .dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
-        .dot-filled { background-color: #6e46c7; }
+        .dot-filled { background-color: #00A8A8; }
         .dot-empty { background-color: #e0e0e0; }
         .footer { background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; }
-        .button { background-color: #6e46c7; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; }
+        .button { background-color: #00A8A8; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; }
       </style>
     </head>
     <body>
@@ -173,6 +206,8 @@ const generateReportHtml = (
           <p>${personalizedIntro}</p>
         </div>
         ` : ''}
+
+        ${aiSummarySection}
 
         <div class="section">
           <h2>Overall Workflow Automation Level</h2>
@@ -313,8 +348,6 @@ End with a paragraph explaining how Nomadic Liberty, the consultancy that provid
 Keep the tone conversational and avoid overwhelming technical jargon.
 `;
 }
-
-
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
