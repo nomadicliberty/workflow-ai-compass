@@ -42,14 +42,20 @@ export const generateAIReport = async (
 
     console.log('🌐 Making API call to:', 'https://workflow-ai-audit.onrender.com/api/generateAiSummary');
     
+    // Increased timeout to 60 seconds for GPT-4 API calls
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    
     const response = await fetch('https://workflow-ai-audit.onrender.com/api/generateAiSummary', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestData),
+      signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
     console.log('📡 API Response status:', response.status);
 
     if (!response.ok) {
@@ -64,6 +70,10 @@ export const generateAIReport = async (
     
     return aiResponse.summary;
   } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error("❌ AI generation timed out after 60 seconds");
+      throw new Error('AI generation timed out after 60 seconds');
+    }
     console.error("❌ Error generating AI report:", error);
     throw error;
   }

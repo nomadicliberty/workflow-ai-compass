@@ -10,14 +10,14 @@ interface AISummaryCardProps {
 
 const AISummaryCard: React.FC<AISummaryCardProps> = ({ aiSummary }) => {
   return (
-    <Card className="mb-8 border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50">
+    <Card className="mb-8 border-2 border-nomadic-teal bg-gradient-to-br from-nomadic-beige to-nomadic-lightBlue">
       <CardHeader className="pb-4">
         <div className="flex items-center space-x-2">
-          <Sparkles className="h-5 w-5 text-purple-600" />
-          <h2 className="text-2xl font-semibold text-purple-800">
+          <Sparkles className="h-5 w-5 text-nomadic-teal" />
+          <h2 className="text-2xl font-semibold text-nomadic-navy">
             AI-Powered Analysis
           </h2>
-          <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+          <Badge variant="secondary" className="bg-nomadic-lightBlue text-nomadic-navy">
             Personalized
           </Badge>
         </div>
@@ -25,7 +25,7 @@ const AISummaryCard: React.FC<AISummaryCardProps> = ({ aiSummary }) => {
       <CardContent>
         <div className="prose prose-gray max-w-none">
           <div 
-            className="text-gray-700 leading-relaxed whitespace-pre-line"
+            className="text-nomadic-gray leading-relaxed whitespace-pre-line"
             dangerouslySetInnerHTML={{ __html: aiSummary.replace(/\n/g, '<br>') }}
           />
         </div>

@@ -25,32 +25,32 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail, a
   const painPointAnswer = allAnswers?.find(a => a.questionId === 'general-1')?.value || '';
   const techReadinessAnswer = allAnswers?.find(a => a.questionId === 'general-2')?.value || '';
   
+  // Check if AI summary exists and has content
+  const hasAISummary = report?.aiGeneratedSummary && report.aiGeneratedSummary.trim().length > 0;
+  
   console.log('📄 ReportView rendered with:', {
     hasReport: !!report,
-    hasAISummary: !!report?.aiGeneratedSummary,
+    hasAISummary,
     aiSummaryLength: report?.aiGeneratedSummary?.length || 0,
-    aiSummaryPreview: report?.aiGeneratedSummary?.substring(0, 50) + '...'
+    aiSummaryPreview: hasAISummary ? report.aiGeneratedSummary.substring(0, 50) + '...' : 'No AI summary'
   });
   
   return (
     <div className="animate-fade-in">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-4">Your Workflow Audit Results</h1>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold mb-4 text-nomadic-navy">Your Workflow Audit Results</h1>
+        <p className="text-nomadic-gray max-w-2xl mx-auto">
           Based on your responses, we've analyzed your business operations and generated personalized recommendations.
         </p>
       </div>
       
       {/* AI-Generated Summary (if available) */}
-      {report.aiGeneratedSummary && report.aiGeneratedSummary.trim() && (
+      {hasAISummary ? (
         <>
           <AISummaryCard aiSummary={report.aiGeneratedSummary} />
           {console.log('✅ Rendering AI Summary Card with content')}
         </>
-      )}
-      
-      {/* Personalized Summary (fallback if no AI summary) */}
-      {(!report.aiGeneratedSummary || !report.aiGeneratedSummary.trim()) && (
+      ) : (
         <>
           <PersonalizedSummary 
             painPointAnswer={painPointAnswer} 
@@ -82,11 +82,11 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail, a
       
       {/* Restart Button */}
       <div className="mt-8 text-center">
-        <Button variant="ghost" onClick={onRestart} className="text-gray-600">
+        <Button variant="ghost" onClick={onRestart} className="text-nomadic-taupe hover:text-nomadic-navy hover:bg-nomadic-beige">
           <RotateCcw className="mr-2 h-4 w-4" />
           Start New Audit
         </Button>
-        <p className="text-xs text-gray-500 mt-4">
+        <p className="text-xs text-nomadic-taupe mt-4">
           © {new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.
         </p>
       </div>

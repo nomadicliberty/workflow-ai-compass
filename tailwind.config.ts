@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -72,12 +73,12 @@ export default {
 					white: '#FFFFFF',
 					lightBlue: '#E4EEF8'
 				},
-				// Keep existing workflow colors for backwards compatibility
+				// Update workflow colors to use brand colors only - no purple
 				workflow: {
 					blue: '#E4EEF8',
 					green: '#F2FCE2',
-					purple: '#E5DEFF',
-					purpleDark: '#00A8A8', // Changed to teal
+					teal: '#00A8A8', // Changed from purple to teal
+					tealDark: '#00A8A8', // Changed from purpleDark to teal
 					gray: '#A8998C', // Changed to soft taupe
 					lightGray: '#F5F1EB' // Changed to warm beige
 				}

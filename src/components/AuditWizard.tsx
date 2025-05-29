@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { AuditQuestion, AuditAnswer, AuditReport } from '../types/audit';
 import { auditQuestions, generateAuditReport } from '../data/auditQuestions';
 import QuestionCard from './QuestionCard';
@@ -22,6 +22,9 @@ const AuditWizard: React.FC = () => {
   const [userEmail, setUserEmail] = useState<string>('');
   const [showEmailForm, setShowEmailForm] = useState(false);
   const { toast } = useToast();
+  
+  // Prevent duplicate AI generation calls
+  const aiGenerationInProgress = useRef(false);
 
   const totalSteps = auditQuestions.length;
 
@@ -61,12 +64,20 @@ const AuditWizard: React.FC = () => {
     setReport(null);
     setUserEmail('');
     setShowEmailForm(false);
+    aiGenerationInProgress.current = false;
   };
 
   const handleEmailSubmit = async (email: string) => {
+    // Prevent duplicate calls
+    if (aiGenerationInProgress.current) {
+      console.log('🔄 AI generation already in progress, skipping duplicate call');
+      return;
+    }
+
     setUserEmail(email);
     setIsGeneratingReport(true);
     setGenerationStatus('Analyzing your responses...');
+    aiGenerationInProgress.current = true;
     
     try {
       console.log('🏁 Starting report generation process...');
@@ -92,20 +103,16 @@ const AuditWizard: React.FC = () => {
         setGenerationStatus('Generating AI-powered insights...');
         console.log('🤖 Calling AI generation service...');
         
-        const aiSummary = await Promise.race([
-          generateAIReport(reportScores, painPointAnswer, techReadinessAnswer),
-          new Promise<string>((_, reject) => 
-            setTimeout(() => reject(new Error('AI generation timeout after 15 seconds')), 15000)
-          )
-        ]);
+        const aiSummary = await generateAIReport(reportScores, painPointAnswer, techReadinessAnswer);
         
         console.log('✅ AI summary received:', {
           length: aiSummary?.length || 0,
-          preview: aiSummary?.substring(0, 100) + '...'
+          preview: aiSummary?.substring(0, 100) + '...',
+          hasContent: !!(aiSummary && aiSummary.trim())
         });
         
         if (aiSummary && aiSummary.trim()) {
-          baseReport.aiGeneratedSummary = aiSummary;
+          baseReport.aiGeneratedSummary = aiSummary.trim();
           console.log('🎯 AI summary successfully attached to report');
           
           toast({
@@ -127,6 +134,7 @@ const AuditWizard: React.FC = () => {
       
       console.log('📋 Final report object:', {
         hasAISummary: !!baseReport.aiGeneratedSummary,
+        aiSummaryLength: baseReport.aiGeneratedSummary?.length || 0,
         overallScore: baseReport.overallScore,
         categoriesCount: baseReport.categories.length
       });
@@ -139,17 +147,12 @@ const AuditWizard: React.FC = () => {
         setGenerationStatus('Sending email report...');
         console.log('📧 Attempting to send email to:', email);
         
-        const emailSent = await Promise.race([
-          sendReportEmail({
-            userEmail: email,
-            report: baseReport,
-            painPoint: painPointAnswer,
-            techReadiness: techReadinessAnswer
-          }),
-          new Promise<boolean>((_, reject) => 
-            setTimeout(() => reject(new Error('Email sending timeout after 20 seconds')), 20000)
-          )
-        ]);
+        const emailSent = await sendReportEmail({
+          userEmail: email,
+          report: baseReport,
+          painPoint: painPointAnswer,
+          techReadiness: techReadinessAnswer
+        });
         
         if (emailSent) {
           console.log('✅ Email sent successfully');
@@ -184,6 +187,7 @@ const AuditWizard: React.FC = () => {
       setIsGeneratingReport(false);
       setGenerationStatus('');
       setShowEmailForm(false);
+      aiGenerationInProgress.current = false;
     }
   };
 
