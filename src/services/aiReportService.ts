@@ -15,6 +15,8 @@ interface AIReportRequest {
   keyChallenge?: string;
   techReadiness?: string;
   painPoint?: string;
+  businessType?: string;
+  teamSize?: string;
 }
 
 interface AIReportResponse {
@@ -27,17 +29,21 @@ interface AIReportResponse {
 export const generateAIReport = async (
   scores: ReportScores,
   keyChallenge?: string,
-  techReadiness?: string
+  techReadiness?: string,
+  businessType?: string,
+  teamSize?: string
 ): Promise<string> => {
   try {
     console.log('🤖 Sending assessment data to AI backend for report generation...');
-    console.log('Data being sent:', { scores, keyChallenge, techReadiness });
+    console.log('Data being sent:', { scores, keyChallenge, techReadiness, businessType, teamSize });
     
     const requestData: AIReportRequest = {
       scores,
       keyChallenge: keyChallenge || 'workflow efficiency',
       techReadiness,
-      painPoint: keyChallenge // Also send as painPoint for backward compatibility
+      painPoint: keyChallenge,
+      businessType,
+      teamSize
     };
 
     console.log('🌐 Making API call to:', 'https://workflow-ai-audit.onrender.com/api/generateAiSummary');

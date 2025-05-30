@@ -15,12 +15,15 @@ const AISummaryCard: React.FC<AISummaryCardProps> = ({ aiSummary }) => {
         <div className="flex items-center space-x-2">
           <Sparkles className="h-5 w-5 text-nomadic-teal" />
           <h2 className="text-2xl font-semibold text-nomadic-navy">
-            AI-Powered Analysis
+            AI-Powered Assessment - Discussion Guide
           </h2>
           <Badge variant="secondary" className="bg-nomadic-lightBlue text-nomadic-navy">
-            Personalized
+            Collaborative
           </Badge>
         </div>
+        <p className="text-sm text-nomadic-gray mt-2 italic">
+          This analysis identifies common workflow patterns and provides general guidance. All recommendations should be explored together during our consultation.
+        </p>
       </CardHeader>
       <CardContent>
         <div className="prose prose-gray max-w-none">

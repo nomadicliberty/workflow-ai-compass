@@ -1,8 +1,35 @@
-
 import { AuditQuestion, WorkflowCategory } from '../types/audit';
 
 // All the questions that make up the audit
 export const auditQuestions: AuditQuestion[] = [
+  // New business context questions
+  {
+    id: 'business-context-1',
+    text: 'What type of business do you operate?',
+    options: [
+      'Service-based',
+      'E-commerce/Retail',
+      'Manufacturing',
+      'Healthcare',
+      'Professional Services',
+      'Other'
+    ],
+    type: 'multiple-choice',
+    category: 'general'
+  },
+  {
+    id: 'business-context-2',
+    text: 'How many people work in your business?',
+    options: [
+      'Just me',
+      '2-5 employees',
+      '6-20 employees',
+      '21+ employees'
+    ],
+    type: 'multiple-choice',
+    category: 'general'
+  },
+  // Existing task management questions
   {
     id: 'task-mgmt-1',
     text: 'How do you currently manage and assign tasks within your team?',
@@ -29,6 +56,7 @@ export const auditQuestions: AuditQuestion[] = [
     type: 'multiple-choice',
     category: 'task-management'
   },
+  // Existing customer communication questions
   {
     id: 'customer-comm-1',
     text: 'How do you primarily communicate with your customers?',
@@ -55,6 +83,7 @@ export const auditQuestions: AuditQuestion[] = [
     type: 'multiple-choice',
     category: 'customer-communication'
   },
+  // Existing data entry questions
   {
     id: 'data-entry-1',
     text: 'How is data typically entered into your business systems?',
@@ -81,6 +110,7 @@ export const auditQuestions: AuditQuestion[] = [
     type: 'multiple-choice',
     category: 'data-entry'
   },
+  // Existing scheduling questions
   {
     id: 'scheduling-1',
     text: 'How do you manage appointments and scheduling?',
@@ -107,6 +137,7 @@ export const auditQuestions: AuditQuestion[] = [
     type: 'multiple-choice',
     category: 'scheduling'
   },
+  // Existing reporting questions
   {
     id: 'reporting-1',
     text: 'How do you generate business reports?',
@@ -133,6 +164,7 @@ export const auditQuestions: AuditQuestion[] = [
     type: 'multiple-choice',
     category: 'reporting'
   },
+  // Existing general questions
   {
     id: 'general-1',
     text: 'What is your biggest operational pain point right now?',

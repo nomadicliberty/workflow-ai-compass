@@ -89,13 +89,17 @@ const AuditWizard: React.FC = () => {
       const baseReport = generateAuditReport(answers);
       console.log('📊 Base report generated:', baseReport);
       
-      // Get pain point and tech readiness for AI generation
+      // Get all user inputs for AI generation
       const painPointAnswer = answers.find(a => a.questionId === 'general-1')?.value || '';
       const techReadinessAnswer = answers.find(a => a.questionId === 'general-2')?.value || '';
+      const businessTypeAnswer = answers.find(a => a.questionId === 'business-context-1')?.value || '';
+      const teamSizeAnswer = answers.find(a => a.questionId === 'business-context-2')?.value || '';
       
       console.log('🔍 Extracted user inputs:');
       console.log('- Pain Point:', painPointAnswer);
       console.log('- Tech Readiness:', techReadinessAnswer);
+      console.log('- Business Type:', businessTypeAnswer);
+      console.log('- Team Size:', teamSizeAnswer);
       
       // Transform report data for AI backend
       const reportScores = transformReportForAI(baseReport);
@@ -106,7 +110,13 @@ const AuditWizard: React.FC = () => {
         setGenerationStatus('Generating AI-powered insights...');
         console.log('🤖 Calling AI generation service...');
         
-        const aiSummary = await generateAIReport(reportScores, painPointAnswer, techReadinessAnswer);
+        const aiSummary = await generateAIReport(
+          reportScores, 
+          painPointAnswer, 
+          techReadinessAnswer,
+          businessTypeAnswer,
+          teamSizeAnswer
+        );
         
         console.log('✅ AI summary received:', {
           length: aiSummary?.length || 0,
