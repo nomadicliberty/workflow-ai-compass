@@ -222,7 +222,7 @@ const AuditWizard: React.FC = () => {
     if (isGeneratingReport) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
-          <span className="loader mb-8"></span>
+          <div className="w-16 h-16 border-4 border-nomadic-teal border-t-transparent rounded-full animate-spin mb-8"></div>
           <h2 className="text-2xl font-semibold mb-4 text-nomadic-navy">Analyzing Your Workflow...</h2>
           <p className="text-nomadic-gray max-w-md text-center mb-4">
             Our AI is processing your responses and generating personalized recommendations.
@@ -230,7 +230,7 @@ const AuditWizard: React.FC = () => {
           <p className="text-sm text-nomadic-teal font-medium mb-2">
             This may take up to 30 seconds.
           </p>
-          <p className="text-sm text-nomadic-gray">
+          <p className="text-sm text-nomadic-gray mb-4">
             Please don't refresh your browser.
           </p>
           {generationStatus && (

@@ -11,8 +11,8 @@ export const generatePDF = async (
     // Create a new PDF document with better margins
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const leftMargin = 15;
-    const rightMargin = 15;
+    const leftMargin = 20;
+    const rightMargin = 20;
     const contentWidth = pageWidth - leftMargin - rightMargin;
     let yPos = 20;
     

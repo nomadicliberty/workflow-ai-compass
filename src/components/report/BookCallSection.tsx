@@ -8,7 +8,6 @@ const BookCallSection: React.FC = () => {
   const { toast } = useToast();
 
   const handleBookCall = () => {
-    // Updated booking URL
     window.open('https://calendar.app.google/fDRgarRXA42zzqEo8', '_blank');
     
     toast({
@@ -21,7 +20,7 @@ const BookCallSection: React.FC = () => {
     <div className="mb-8 bg-nomadic-lightBlue bg-opacity-20 p-6 rounded-lg border border-nomadic-teal flex flex-col md:flex-row justify-between items-center">
       <div>
         <h3 className="text-xl font-semibold mb-2">Need help implementing these solutions?</h3>
-        <p className="text-gray-600">Schedule a free consultation call for personalized guidance at Nomadic Liberty LLC</p>
+        <p className="text-gray-600">Schedule a free consultation call for personalized guidance</p>
       </div>
       <Button 
         onClick={handleBookCall}
