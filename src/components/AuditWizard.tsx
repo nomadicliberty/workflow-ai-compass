@@ -234,7 +234,9 @@ const AuditWizard: React.FC = () => {
             Please don't refresh your browser.
           </p>
           {generationStatus && (
-            <p className="text-xs text-nomadic-taupe">{generationStatus}</p>
+            <div className="text-sm text-nomadic-teal font-medium mt-4 bg-nomadic-lightBlue bg-opacity-20 px-4 py-2 rounded-lg">
+              {generationStatus}
+            </div>
           )}
         </div>
       );

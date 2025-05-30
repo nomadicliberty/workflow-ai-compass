@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -110,16 +109,7 @@ app.post('/api/generateAiSummary', (req: Request, res: Response) => {
         },
         body: JSON.stringify({
           model: "gpt-4",
-          messages: [
-            {
-              role: "system",
-              content: "You are generating an automated workflow analysis report. Frame your response as an AI-generated analysis, not a personal communication. Use educational language like 'areas to explore' and 'you might consider' rather than prescriptive recommendations like 'we recommend' or 'you should implement'. Avoid listing specific software tool names unless absolutely necessary. Start responses with 'Based on your workflow audit responses, here's an automated analysis of your current processes and automation opportunities...' Keep the tone collaborative and helpful, not expert or authoritative. Do not include email formatting like subject lines, greetings, signatures, or closing remarks. Focus on identifying opportunities and patterns rather than giving specific directives."
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
+          messages: [{ role: "user", content: prompt }],
           temperature: 0.7
         })
       });
@@ -268,7 +258,7 @@ const generateReportHtml = (
 
         <div class="section" style="text-align: center;">
           <p><strong>Ready to enhance your workflow?</strong></p>
-          <a href="https://calendar.app.google/fDRgarRXA42zzqEo8" class="button">Schedule Your Free Consultation</a>
+          <a href="https://calendly.com/workflow-ai/discovery" class="button">Book a Free 20-Minute Consultation</a>
         </div>
 
         <div class="footer">
@@ -336,28 +326,26 @@ function buildPrompt(scores: any, keyChallenge: string, techReadiness?: string, 
   }
 
   return `
-Based on a workflow automation audit for a small business, generate an educational analysis report that:
+You are an AI automation consultant generating a friendly, human-readable report for a small business owner who just completed a workflow audit.
 
-Business Context:
 ${personalContext}
-Overall automation score: ${overall}/100  
-Potential time savings: ${totalTimeSavings} hours per week
+Their overall automation score is ${overall}/100  
+They could save about ${totalTimeSavings} hours per week with improvements.
 
 Category breakdown:
 ${categories}
 
-Please create a comprehensive analysis that:
+Please write a comprehensive, personalized report that:
 
-1. Starts with "Based on your workflow audit responses, here's an automated analysis of your current processes and automation opportunities..."
-2. Addresses their specific challenge ("${challenge}") with educational insights
-3. ${techReadiness ? `Considers their team's technology comfort level (${techReadiness}) when discussing opportunities` : 'Uses accessible, non-technical language'}
-4. For each category, explains what the score means and suggests 2-3 areas to explore for improvement
-5. Uses collaborative language like "you might consider," "areas to explore," and "opportunities include"
-6. Avoids prescriptive language like "you should" or "we recommend"
-7. Maintains an encouraging, educational tone throughout
-8. Focuses on identifying patterns and opportunities rather than specific tool recommendations
+1. Addresses their specific challenge ("${challenge}") in the opening
+2. ${techReadiness ? `Considers their team's technology comfort level (${techReadiness}) when making recommendations` : 'Uses accessible, non-technical language'}
+3. For each category, explains what the score means and offers 2–3 specific improvement suggestions
+4. Recommends practical tools or platforms they could try
+5. Maintains an encouraging, supportive tone throughout
 
-Keep the response focused on workflow analysis insights without any email formatting, greetings, signatures, or closing remarks.
+End with a paragraph explaining how Nomadic Liberty, the consultancy that provided this audit, can help implement these improvements with hands-on support tailored to their specific needs and comfort level.
+
+Keep the tone conversational and avoid overwhelming technical jargon.
 `;
 }
 
