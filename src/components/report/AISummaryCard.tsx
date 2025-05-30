@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Sparkles } from 'lucide-react';
 
 interface AISummaryCardProps {
@@ -17,9 +16,6 @@ const AISummaryCard: React.FC<AISummaryCardProps> = ({ aiSummary }) => {
           <h2 className="text-2xl font-semibold text-nomadic-navy">
             AI-Powered Assessment - Discussion Guide
           </h2>
-          <Badge variant="secondary" className="bg-nomadic-lightBlue text-nomadic-navy">
-            Collaborative
-          </Badge>
         </div>
         <p className="text-sm text-nomadic-gray mt-2 italic">
           This analysis identifies common workflow patterns and provides general guidance. All recommendations should be explored together during our consultation.

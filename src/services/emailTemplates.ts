@@ -131,7 +131,7 @@ export const generateReportHtml = (
           <div class="section-bg">
             <p style="color: #1B365D; font-size: 18px; font-weight: bold;">Ready to enhance your workflow?</p>
             <a href="https://calendar.app.google/fDRgarRXA42zzqEo8" class="button">Schedule Your Free Consultation</a>
-            <p style="color: #A8998C; font-size: 14px; margin-top: 10px;">No commitment required • Expert guidance included</p>
+            <p style="color: #A8998C; font-size: 14px; margin-top: 10px;">No commitment required • Personalized guidance included</p>
           </div>
         </div>
         
