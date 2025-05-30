@@ -1,4 +1,3 @@
-
 import { AuditReport, WorkflowCategory, RatingLevel } from "../types/audit";
 
 /**
@@ -140,7 +139,7 @@ export const generateReportHtml = (
           <p style="margin: 0 0 10px 0;">Transforming businesses through intelligent automation</p>
           <p style="margin: 0 0 10px 0;">This report was generated based on your inputs to the Workflow AI Audit tool.</p>
           <p style="margin: 0 0 10px 0;">Have questions? Reply to this email for assistance.</p>
-          <p style="margin: 0 0 15px 0;">Best regards,<br/>Jason Henry<br/>Nomadic Liberty LLC</p>
+          <p style="margin: 0 0 15px 0;">Jason Henry<br/>Nomadic Liberty LLC</p>
           <p style="margin: 0; opacity: 0.8;">© ${new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.</p>
         </div>
       </div>

@@ -1,4 +1,3 @@
-
 import { jsPDF } from "jspdf";
 import { AuditReport } from "../types/audit";
 
@@ -11,8 +10,8 @@ export const generatePDF = async (
     // Create a new PDF document with better margins
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const leftMargin = 20;
-    const rightMargin = 20;
+    const leftMargin = 25;
+    const rightMargin = 25;
     const contentWidth = pageWidth - leftMargin - rightMargin;
     let yPos = 20;
     
