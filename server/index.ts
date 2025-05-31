@@ -12,7 +12,7 @@ app.use(express.json());
 
 app.post('/api/send-report', (req: Request, res: Response) => {
   (async () => {
-    const { userEmail, report, painPoint, techReadiness } = req.body;
+    const { userEmail, userName, report, painPoint, techReadiness } = req.body;
 
     if (!userEmail || !report) {
       res.status(400).json({ error: 'Missing required fields' });
@@ -29,13 +29,16 @@ app.post('/api/send-report', (req: Request, res: Response) => {
 
     console.log('📧 Preparing to send email with Resend API...');
     console.log('- User email:', userEmail);
+    console.log('- User name:', userName || 'Not provided');
     console.log('- Has AI summary:', !!report.aiGeneratedSummary);
     console.log('- API key length:', resendApiKey.length);
 
-    const emailHtml = generateReportHtml(report, painPoint, techReadiness);
+    const customerEmailHtml = generateReportHtml(report, painPoint, techReadiness);
+    const adminEmailHtml = generateAdminReportHtml(userEmail, userName, report, painPoint, techReadiness);
 
     try {
-      const response = await fetch('https://api.resend.com/emails', {
+      // Send email to customer
+      const customerResponse = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           "Authorization": `Bearer ${resendApiKey}`,
@@ -44,33 +47,41 @@ app.post('/api/send-report', (req: Request, res: Response) => {
         body: JSON.stringify({
           from: 'Jason Henry <jason@nomadicliberty.com>',
           to: userEmail,
-          bcc: 'jason@nomadicliberty.com',
           subject: 'Your Workflow AI Audit Results',
-          html: emailHtml,
+          html: customerEmailHtml,
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        console.error('❌ Resend API error:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: JSON.stringify(error, null, 2)
-        });
-        
-        // Provide more specific error messages
-        if (response.status === 401 || response.status === 403) {
-          res.status(500).json({ error: 'Email service authentication failed' });
-        } else if (response.status === 429) {
-          res.status(500).json({ error: 'Email rate limit exceeded, please try again later' });
-        } else {
-          res.status(500).json({ error: 'Failed to send email' });
-        }
+      // Send copy to admin with customer details
+      const adminResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          "Authorization": `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'Workflow Audit <jason@nomadicliberty.com>',
+          to: 'jason@nomadicliberty.com',
+          subject: `New Workflow Audit - ${userName || 'No Name'} - ${userEmail}`,
+          html: adminEmailHtml,
+        }),
+      });
+
+      if (!customerResponse.ok) {
+        const error = await customerResponse.json();
+        console.error('❌ Customer email error:', error);
+        res.status(500).json({ error: 'Failed to send customer email' });
         return;
       }
 
-      const result = await response.json();
-      console.log('✅ Email sent successfully:', result);
+      if (!adminResponse.ok) {
+        const error = await adminResponse.json();
+        console.error('❌ Admin email error:', error);
+        // Continue even if admin email fails
+      }
+
+      const result = await customerResponse.json();
+      console.log('✅ Emails sent successfully:', result);
       res.status(200).json({ success: true });
     } catch (err) {
       console.error('❌ Server error sending email:', err);
@@ -267,6 +278,73 @@ const generateReportHtml = (
           <p>Have questions? Reply to this email for assistance.</p>
           <p>© ${new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.</p>
         </div>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+const generateAdminReportHtml = (
+  userEmail: string,
+  userName: string | undefined,
+  report: any,
+  painPoint?: string,
+  techReadiness?: string
+): string => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; }
+        .header { background-color: #1B365D; color: white; padding: 20px; margin-bottom: 20px; }
+        .customer-info { background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #00A8A8; }
+        .score-highlight { font-size: 18px; font-weight: bold; color: #00A8A8; }
+        .section { margin-bottom: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>New Workflow Audit Submission</h1>
+      </div>
+
+      <div class="customer-info">
+        <h2>Customer Details</h2>
+        <p><strong>Name/Company:</strong> ${userName || 'Not provided'}</p>
+        <p><strong>Email:</strong> ${userEmail}</p>
+        <p><strong>Pain Point:</strong> ${painPoint || 'Not provided'}</p>
+        <p><strong>Tech Readiness:</strong> ${techReadiness || 'Not provided'}</p>
+        <p class="score-highlight">Overall Score: ${report.overallScore}/100</p>
+        <p><strong>Rating:</strong> ${report.overallRating}</p>
+        <p><strong>Time Savings:</strong> ${report.totalTimeSavings}</p>
+      </div>
+
+      <div class="section">
+        <h2>Category Breakdown</h2>
+        ${report.categories.map((cat: any) => `
+          <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            <h3>${getCategoryName(cat.category)}</h3>
+            <p>Score: ${cat.score}/100 (${cat.rating})</p>
+            <p>Time Savings: ${cat.timeSavings}</p>
+            <p>Tools: ${cat.tools.join(', ')}</p>
+          </div>
+        `).join('')}
+      </div>
+
+      ${report.aiGeneratedSummary ? `
+      <div class="section">
+        <h2>AI-Generated Summary</h2>
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
+          <p style="white-space: pre-line;">${report.aiGeneratedSummary}</p>
+        </div>
+      </div>
+      ` : ''}
+
+      <div class="section">
+        <h2>Top Recommendations</h2>
+        <ul>
+          ${report.topRecommendations.map((rec: string) => `<li>${rec}</li>`).join('')}
+        </ul>
       </div>
     </body>
     </html>

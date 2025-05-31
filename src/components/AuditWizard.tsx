@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { AuditQuestion, AuditAnswer, AuditReport } from '../types/audit';
 import { auditQuestions, generateAuditReport } from '../data/auditQuestions';
@@ -5,7 +6,8 @@ import QuestionCard from './QuestionCard';
 import ProgressBar from './ProgressBar';
 import ReportView from './ReportView';
 import WelcomeScreen from './WelcomeScreen';
-import EmailCollectionForm from './EmailCollectionForm';
+import EmailCollectionForm from './forms/EmailCollectionForm';
+import LoadingScreen from './ui/LoadingScreen';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +21,7 @@ const AuditWizard: React.FC = () => {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [generationStatus, setGenerationStatus] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
+  const [userName, setUserName] = useState<string>('');
   const [showEmailForm, setShowEmailForm] = useState(false);
   const { toast } = useToast();
   
@@ -62,13 +65,13 @@ const AuditWizard: React.FC = () => {
     setAnswers([]);
     setReport(null);
     setUserEmail('');
+    setUserName('');
     setShowEmailForm(false);
     aiGenerationInProgress.current = false;
   };
 
-  const handleEmailSubmit = async (email: string) => {
-    console.log('🔥 AuditWizard: handleEmailSubmit called with email:', email);
-    console.log('🔥 AuditWizard: aiGenerationInProgress.current:', aiGenerationInProgress.current);
+  const handleEmailSubmit = async (data: { email: string; name: string }) => {
+    console.log('🔥 AuditWizard: handleEmailSubmit called with data:', data);
     
     // Prevent duplicate calls
     if (aiGenerationInProgress.current) {
@@ -76,7 +79,8 @@ const AuditWizard: React.FC = () => {
       return;
     }
 
-    setUserEmail(email);
+    setUserEmail(data.email);
+    setUserName(data.name);
     setIsGeneratingReport(true);
     setGenerationStatus('Analyzing your responses...');
     aiGenerationInProgress.current = true;
@@ -144,23 +148,17 @@ const AuditWizard: React.FC = () => {
         });
       }
       
-      console.log('📋 Final report object:', {
-        hasAISummary: !!baseReport.aiGeneratedSummary,
-        aiSummaryLength: baseReport.aiGeneratedSummary?.length || 0,
-        overallScore: baseReport.overallScore,
-        categoriesCount: baseReport.categories.length
-      });
-      
       // Set the report BEFORE trying to send email
       setReport(baseReport);
       
       // Send email with the report
       try {
         setGenerationStatus('Sending email report...');
-        console.log('📧 Attempting to send email to:', email);
+        console.log('📧 Attempting to send email to:', data.email);
         
         const emailSent = await sendReportEmail({
-          userEmail: email,
+          userEmail: data.email,
+          userName: data.name,
           report: baseReport,
           painPoint: painPointAnswer,
           techReadiness: techReadinessAnswer
@@ -220,26 +218,7 @@ const AuditWizard: React.FC = () => {
     }
 
     if (isGeneratingReport) {
-      return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
-          <div className="w-16 h-16 border-4 border-nomadic-teal border-t-transparent rounded-full animate-spin mb-8"></div>
-          <h2 className="text-2xl font-semibold mb-4 text-nomadic-navy">Analyzing Your Workflow...</h2>
-          <p className="text-nomadic-gray max-w-md text-center mb-4">
-            Generating your personalized report... This may take up to 30 seconds.
-          </p>
-          <p className="text-sm text-nomadic-teal font-medium mb-2">
-            Please don't refresh your browser.
-          </p>
-          <p className="text-sm text-nomadic-gray mb-4">
-            Our AI is processing your responses and creating tailored recommendations.
-          </p>
-          {generationStatus && (
-            <div className="text-sm text-nomadic-teal font-medium mt-4 bg-nomadic-lightBlue bg-opacity-20 px-4 py-2 rounded-lg">
-              {generationStatus}
-            </div>
-          )}
-        </div>
-      );
+      return <LoadingScreen status={generationStatus} />;
     }
 
     if (report) {

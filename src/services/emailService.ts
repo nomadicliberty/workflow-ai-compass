@@ -3,6 +3,7 @@ import { AuditReport } from "../types/audit";
 
 interface SendReportEmailParams {
   userEmail: string;
+  userName?: string;
   report: AuditReport;
   painPoint?: string;
   techReadiness?: string;
@@ -13,6 +14,7 @@ interface SendReportEmailParams {
  */
 export const sendReportEmail = async ({ 
   userEmail, 
+  userName,
   report, 
   painPoint,
   techReadiness
@@ -23,6 +25,7 @@ export const sendReportEmail = async ({
     // Include AI-generated summary in the email data
     const emailData = {
       userEmail,
+      userName,
       report: {
         ...report,
         // Ensure AI summary is included if available

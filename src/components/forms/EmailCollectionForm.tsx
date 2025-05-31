@@ -6,13 +6,14 @@ import { Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface EmailCollectionFormProps {
-  onSubmit: (email: string) => void;
+  onSubmit: (data: { email: string; name: string }) => void;
   isLoading: boolean;
 }
 
 const EmailCollectionForm: React.FC<EmailCollectionFormProps> = ({ onSubmit, isLoading }) => {
   const [email, setEmail] = useState('');
-  const [isValid, setIsValid] = useState(true);
+  const [name, setName] = useState('');
+  const [isEmailValid, setIsEmailValid] = useState(true);
   const { toast } = useToast();
 
   const validateEmail = (email: string) => {
@@ -33,7 +34,7 @@ const EmailCollectionForm: React.FC<EmailCollectionFormProps> = ({ onSubmit, isL
     }
 
     if (!validateEmail(email)) {
-      setIsValid(false);
+      setIsEmailValid(false);
       toast({
         title: "Invalid Email",
         description: "Please enter a valid email address.",
@@ -42,9 +43,9 @@ const EmailCollectionForm: React.FC<EmailCollectionFormProps> = ({ onSubmit, isL
       return;
     }
     
-    setIsValid(true);
-    console.log('🔥 EmailCollectionForm: Submitting email:', email);
-    onSubmit(email);
+    setIsEmailValid(true);
+    console.log('🔥 EmailCollectionForm: Submitting data:', { email, name });
+    onSubmit({ email, name });
   };
 
   return (
@@ -54,10 +55,24 @@ const EmailCollectionForm: React.FC<EmailCollectionFormProps> = ({ onSubmit, isL
       </h2>
       
       <p className="text-gray-600 mb-6 text-center">
-        Enter your email to receive your personalized workflow audit report with AI recommendations and estimated time savings.
+        Enter your details to receive your personalized workflow audit report with AI recommendations and estimated time savings.
       </p>
       
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            Name or Company
+          </label>
+          <Input
+            id="name"
+            type="text"
+            placeholder="Your name or company name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full"
+          />
+        </div>
+
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
             Email Address
@@ -69,12 +84,12 @@ const EmailCollectionForm: React.FC<EmailCollectionFormProps> = ({ onSubmit, isL
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
-              if (!isValid) setIsValid(validateEmail(e.target.value));
+              if (!isEmailValid) setIsEmailValid(validateEmail(e.target.value));
             }}
-            className={`w-full ${!isValid ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+            className={`w-full ${!isEmailValid ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
             required
           />
-          {!isValid && (
+          {!isEmailValid && (
             <p className="mt-1 text-sm text-red-600">Please enter a valid email address</p>
           )}
         </div>

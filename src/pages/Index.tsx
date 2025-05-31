@@ -18,7 +18,7 @@ const Index = () => {
             </h1>
             <div className="flex items-center space-x-4">
               <div className="hidden md:block text-sm text-gray-600">
-                For Small Business Owners
+                Takes approximately 3 minutes to complete
               </div>
               <Button 
                 variant="outline" 
