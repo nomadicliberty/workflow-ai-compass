@@ -42,12 +42,27 @@ export const generatePDF = async (
       doc.text("AI-POWERED", leftMargin + 2, yPos + 3);
       yPos += 15;
       
-      // Split the AI summary into multiple lines with more conservative width
-      const splitSummary = doc.splitTextToSize(report.aiGeneratedSummary, contentWidth);
-      doc.setFontSize(9); // Reduced from 10
-      doc.setTextColor(77, 77, 77); // Nomadic Text Gray
-      doc.text(splitSummary, leftMargin, yPos);
-      yPos += (splitSummary.length * 5) + 15; // Reduced line height
+      // Manually split the AI summary to prevent text cutoff
+      const words = report.aiGeneratedSummary.split(' ');
+      const lines = [];
+      let currentLine = '';
+
+      words.forEach(word => {
+      if ((currentLine + word).length < 60) { // Character limit per line
+      currentLine += word + ' ';
+      } else {
+      lines.push(currentLine.trim());
+      currentLine = word + ' ';
+     }
+     });
+    if (currentLine) lines.push(currentLine.trim());
+
+doc.setFontSize(9);
+doc.setTextColor(77, 77, 77); // Nomadic Text Gray
+lines.forEach((line, index) => {
+  doc.text(line, leftMargin, yPos + (index * 5));
+});
+yPos += (lines.length * 5) + 15;
     } else if (painPoint || techReadiness) {
       // Fallback to personalized summary if no AI summary
       doc.setFontSize(12); // Reduced from 14
