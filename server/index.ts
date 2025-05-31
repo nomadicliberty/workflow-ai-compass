@@ -258,7 +258,7 @@ const generateReportHtml = (
 
         <div class="section" style="text-align: center;">
           <p><strong>Ready to enhance your workflow?</strong></p>
-          <a href="https://calendly.com/workflow-ai/discovery" class="button">Book a Free 20-Minute Consultation</a>
+          <a href="https://calendar.app.google/fDRgarRXA42zzqEo8" class="button">Book a Free 20-Minute Consultation</a>
         </div>
 
         <div class="footer">
@@ -345,7 +345,7 @@ Please write a comprehensive, personalized report that:
 
 End with a paragraph explaining how Nomadic Liberty, the consultancy that provided this audit, can help implement these improvements with hands-on support tailored to their specific needs and comfort level.
 
-Keep the tone conversational and avoid overwhelming technical jargon.
+Frame this as an AI-generated analysis, not a personal communication. Use educational language like 'areas to explore' and 'you might consider' rather than prescriptive recommendations like 'we recommend' or 'you should implement'. Avoid listing specific software tool names. Keep the tone collaborative and helpful, not expert or authoritative. Do not include email formatting like subject lines, greetings, or signatures.
 `;
 }
 
