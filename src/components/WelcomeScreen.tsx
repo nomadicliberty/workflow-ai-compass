@@ -68,7 +68,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart }) => {
       </CardFooter>
       
       <p className="text-nomadic-taupe mt-8 text-sm">
-        Takes approximately 5 minutes to complete
+        Takes approximately 3 minutes to complete
       </p>
     </div>
   );
