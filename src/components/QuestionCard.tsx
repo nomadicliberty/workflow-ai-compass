@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuditQuestion, AuditAnswer } from '../types/audit';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -13,7 +12,13 @@ interface QuestionCardProps {
 }
 
 const QuestionCard: React.FC<QuestionCardProps> = ({ question, onAnswer, currentAnswer }) => {
-  const [answer, setAnswer] = useState<string>('');
+  // Initialize state with currentAnswer prop
+  const [answer, setAnswer] = useState<string>(currentAnswer || '');
+
+  // Update local state when currentAnswer prop changes (for navigation between questions)
+  useEffect(() => {
+    setAnswer(currentAnswer || '');
+  }, [currentAnswer, question.id]); // Add question.id as dependency
 
   const handleRadioChange = (value: string) => {
     setAnswer(value);
@@ -25,11 +30,12 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, onAnswer, current
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setAnswer(e.target.value);
-    if (e.target.value.trim()) {
+    const value = e.target.value;
+    setAnswer(value);
+    if (value.trim()) {
       onAnswer({
         questionId: question.id,
-        value: e.target.value,
+        value,
         category: question.category
       });
     }

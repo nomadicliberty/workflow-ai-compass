@@ -1,3 +1,4 @@
+// src/utils/pdfGenerator.ts - Fixed version with consistent margins
 
 import { jsPDF } from "jspdf";
 import { AuditReport } from "../types/audit";
@@ -8,252 +9,215 @@ export const generatePDF = async (
   techReadiness?: string
 ): Promise<void> => {
   try {
-    // Create a new PDF document with much more conservative margins
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const leftMargin = 25;
-    const rightMargin = 25;
-    const contentWidth = pageWidth - leftMargin - rightMargin; // Much more conservative width
-    let yPos = 20;
+    const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Add header with Nomadic Liberty branding - reduced font size
-    doc.setFontSize(16); // Reduced from 18
-    doc.setTextColor(0, 168, 168); // Nomadic Teal #00A8A8
-    doc.text("Workflow AI Audit Report", pageWidth / 2, yPos, { align: "center" });
+    // Consistent margins and positioning
+    const margins = {
+      left: 20,
+      right: 20,
+      top: 20,
+      bottom: 20
+    };
+    
+    const contentWidth = pageWidth - margins.left - margins.right;
+    const centerX = pageWidth / 2;
+    let yPos = margins.top;
+    
+    // Helper function to check if we need a new page
+    const checkNewPage = (nextContentHeight: number = 20) => {
+      if (yPos + nextContentHeight > pageHeight - margins.bottom) {
+        doc.addPage();
+        yPos = margins.top;
+        return true;
+      }
+      return false;
+    };
+    
+    // Helper function for centered text
+    const addCenteredText = (text: string, fontSize: number, color: number[] = [0, 0, 0]) => {
+      doc.setFontSize(fontSize);
+      doc.setTextColor(...color);
+      doc.text(text, centerX, yPos, { align: "center" });
+    };
+    
+    // Helper function for left-aligned text
+    const addLeftText = (text: string, fontSize: number, color: number[] = [0, 0, 0], wrap: boolean = false) => {
+      doc.setFontSize(fontSize);
+      doc.setTextColor(...color);
+      
+      if (wrap) {
+        const splitText = doc.splitTextToSize(text, contentWidth);
+        doc.text(splitText, margins.left, yPos);
+        return splitText.length * (fontSize * 0.4); // Approximate line height
+      } else {
+        doc.text(text, margins.left, yPos);
+        return fontSize * 0.4;
+      }
+    };
+    
+    // HEADER SECTION
+    addCenteredText("Workflow AI Audit Report", 18, [0, 168, 168]); // Nomadic Teal
     yPos += 15;
     
-    doc.setFontSize(10); // Reduced from 12
-    doc.setTextColor(27, 54, 93); // Nomadic Navy #1B365D
-    doc.text("Nomadic Liberty LLC", pageWidth / 2, yPos, { align: "center" });
-    yPos += 20;
+    addCenteredText("Nomadic Liberty LLC", 11, [27, 54, 93]); // Nomadic Navy
+    yPos += 25;
     
-    // Add AI-generated summary if available (prioritize over personalized assessment)
+    // AI SUMMARY SECTION
     if (report.aiGeneratedSummary) {
-      doc.setFontSize(12); // Reduced from 14
-      doc.setTextColor(27, 54, 93); // Nomadic Navy for section headers
-      doc.text("AI-Generated Insights", leftMargin, yPos);
-      yPos += 10;
+      checkNewPage(40);
       
-      // Add AI badge/indicator with Nomadic branding
-      doc.setFontSize(7); // Reduced from 8
-      doc.setTextColor(255, 255, 255);
+      addLeftText("AI-Generated Insights", 14, [27, 54, 93]);
+      yPos += 12;
+      
+      // AI badge
       doc.setFillColor(0, 168, 168); // Nomadic Teal
-      doc.roundedRect(leftMargin, yPos - 2, 25, 8, 2, 2, "F");
-      doc.text("AI-POWERED", leftMargin + 2, yPos + 3);
+      doc.roundedRect(margins.left, yPos - 3, 30, 10, 2, 2, "F");
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      doc.text("AI-POWERED", margins.left + 2, yPos + 4);
+      yPos += 18;
+      
+      // AI summary text with proper wrapping
+      const summaryLines = doc.splitTextToSize(report.aiGeneratedSummary, contentWidth);
+      doc.setFontSize(10);
+      doc.setTextColor(77, 77, 77);
+      
+      summaryLines.forEach((line: string, index: number) => {
+        checkNewPage();
+        doc.text(line, margins.left, yPos);
+        yPos += 5;
+      });
       yPos += 15;
-      
-      // Manually split the AI summary to prevent text cutoff
-      const words = report.aiGeneratedSummary.split(' ');
-      const lines = [];
-      let currentLine = '';
-
-      words.forEach(word => {
-      if ((currentLine + word).length < 60) { // Character limit per line
-      currentLine += word + ' ';
-      } else {
-      lines.push(currentLine.trim());
-      currentLine = word + ' ';
-     }
-     });
-    if (currentLine) lines.push(currentLine.trim());
-
-doc.setFontSize(9);
-doc.setTextColor(77, 77, 77); // Nomadic Text Gray
-lines.forEach((line, index) => {
-  doc.text(line, leftMargin, yPos + (index * 5));
-});
-yPos += (lines.length * 5) + 15;
-    } else if (painPoint || techReadiness) {
-      // Fallback to personalized summary if no AI summary
-      doc.setFontSize(12); // Reduced from 14
-      doc.setTextColor(27, 54, 93); // Nomadic Navy
-      doc.text("Personalized Assessment", leftMargin, yPos);
-      yPos += 10;
-      
-      let personalizedText = "";
-      if (painPoint) {
-        personalizedText += `We understand that "${painPoint}" is your primary operational challenge. `;
-      }
-      
-      if (techReadiness && techReadiness.includes("Very eager")) {
-        personalizedText += "Your team's enthusiasm for new technology positions you well to implement the suggested automation solutions.";
-      } else if (techReadiness && techReadiness.includes("resistant")) {
-        personalizedText += "We've focused on solutions that are user-friendly and come with excellent support resources for teams that may need extra assistance with new technology.";
-      } else {
-        personalizedText += "Our recommendations are tailored to match your team's comfort level with technology adoption.";
-      }
-      
-      const splitText = doc.splitTextToSize(personalizedText, contentWidth);
-      doc.setFontSize(9); // Reduced from 10
-      doc.setTextColor(77, 77, 77); // Nomadic Text Gray
-      doc.text(splitText, leftMargin, yPos);
-      yPos += (splitText.length * 5) + 10; // Reduced line height
     }
     
-    // Check if we need a new page
-    if (yPos > 250) {
-      doc.addPage();
-      yPos = 20;
-    }
+    // OVERALL ASSESSMENT SECTION
+    checkNewPage(60);
     
-    // Add overall assessment with Nomadic Liberty branding
-    doc.setFontSize(12); // Reduced from 14
-    doc.setTextColor(27, 54, 93); // Nomadic Navy
-    doc.text("Overall Assessment", leftMargin, yPos);
-    yPos += 10;
+    addLeftText("Overall Assessment", 14, [27, 54, 93]);
+    yPos += 12;
     
-    doc.setFontSize(10); // Reduced from 12
-    doc.setTextColor(77, 77, 77); // Nomadic Text Gray
-    doc.text(`Rating: ${report.overallRating}`, leftMargin, yPos);
-    yPos += 8;
-    doc.text(`Score: ${report.overallScore}/100`, leftMargin, yPos);
+    addLeftText(`Rating: ${report.overallRating}`, 11, [77, 77, 77]);
     yPos += 8;
     
-    // Add visual dots representation with Nomadic colors
+    addLeftText(`Score: ${report.overallScore}/100`, 11, [77, 77, 77]);
+    yPos += 12;
+    
+    // Visual dots (consistently positioned)
     const totalDots = 5;
     const filledDots = Math.round((report.overallScore / 100) * totalDots);
+    const dotSpacing = 15;
     
     for (let i = 0; i < totalDots; i++) {
-      const dotX = leftMargin + (i * 12);
-      if (i < filledDots) {
-        doc.setFillColor(0, 168, 168); // Nomadic Teal for filled dots
-      } else {
-        doc.setFillColor(245, 241, 235); // Nomadic Beige for empty dots
-      }
-      doc.circle(dotX, yPos + 3, 3, "F");
+      const dotX = margins.left + (i * dotSpacing);
+      const color = i < filledDots ? [0, 168, 168] : [245, 241, 235];
+      doc.setFillColor(...color);
+      doc.circle(dotX, yPos + 3, 4, "F");
     }
-    yPos += 10;
-    
-    // Visual progress bar with Nomadic colors - made narrower
-    doc.setDrawColor(168, 153, 140); // Nomadic Taupe for border
-    doc.setFillColor(245, 241, 235); // Nomadic Beige background
-    doc.rect(leftMargin, yPos, 120, 8, "F"); // Reduced width from 150
-    doc.setFillColor(0, 168, 168); // Nomadic Teal for progress
-    doc.rect(leftMargin, yPos, report.overallScore * 1.2, 8, "F"); // Adjusted scale
     yPos += 15;
     
+    // Progress bar (consistently positioned)
+    const progressBarWidth = 120;
+    doc.setFillColor(245, 241, 235); // Background
+    doc.rect(margins.left, yPos, progressBarWidth, 8, "F");
+    doc.setFillColor(0, 168, 168); // Progress
+    const progressWidth = (report.overallScore / 100) * progressBarWidth;
+    doc.rect(margins.left, yPos, progressWidth, 8, "F");
+    yPos += 18;
+    
     // Time savings
-    doc.setFontSize(10); // Reduced from 12
-    doc.setTextColor(0, 168, 168); // Nomadic Teal for highlights
-    doc.text(`Potential Time Savings: ${report.totalTimeSavings}`, leftMargin, yPos);
+    addLeftText(`Potential Time Savings: ${report.totalTimeSavings}`, 11, [0, 168, 168]);
     yPos += 20;
     
-    // Top recommendations
-    doc.setFontSize(12); // Reduced from 14
-    doc.setTextColor(27, 54, 93); // Nomadic Navy
-    doc.text("Top Recommendations:", leftMargin, yPos);
-    yPos += 10;
+    // TOP RECOMMENDATIONS SECTION
+    checkNewPage(40);
     
-    doc.setFontSize(9); // Reduced from 10
-    doc.setTextColor(77, 77, 77); // Nomadic Text Gray
+    addLeftText("Top Recommendations", 14, [27, 54, 93]);
+    yPos += 12;
+    
     report.topRecommendations.forEach((rec, idx) => {
-      const wrappedRec = doc.splitTextToSize(`${idx + 1}. ${rec}`, contentWidth);
-      doc.text(wrappedRec, leftMargin, yPos);
-      yPos += (wrappedRec.length * 5); // Reduced line height
+      checkNewPage();
+      const recommendationText = `${idx + 1}. ${rec}`;
+      const lineHeight = addLeftText(recommendationText, 10, [77, 77, 77], true);
+      yPos += lineHeight + 2;
     });
     yPos += 15;
     
-    // Category assessments with Nomadic Liberty branding
-    doc.setFontSize(12); // Reduced from 14
-    doc.setTextColor(27, 54, 93); // Nomadic Navy
-    doc.text("Category Assessments", leftMargin, yPos);
+    // CATEGORY ASSESSMENTS SECTION
+    checkNewPage(40);
+    
+    addLeftText("Category Assessments", 14, [27, 54, 93]);
     yPos += 15;
     
     for (const category of report.categories) {
-      // Check if we need a new page
-      if (yPos > 230) {
-        doc.addPage();
-        yPos = 20;
-      }
+      checkNewPage(80); // Need more space for each category
       
       const categoryName = getCategoryName(category.category);
+      addLeftText(categoryName, 12, [0, 168, 168]);
+      yPos += 10;
       
-      doc.setFontSize(11); // Reduced from 12
-      doc.setTextColor(0, 168, 168); // Nomadic Teal
-      doc.text(categoryName, leftMargin, yPos);
+      addLeftText(`Rating: ${category.rating} (Score: ${category.score}/100)`, 10, [77, 77, 77]);
       yPos += 8;
       
-      // Rating and score
-      doc.setFontSize(9); // Reduced from 10
-      doc.setTextColor(77, 77, 77); // Nomadic Text Gray
-      doc.text(`Rating: ${category.rating} (Score: ${category.score}/100)`, leftMargin, yPos);
-      yPos += 8;
-      
-      // Add visual dots for category with Nomadic colors
+      // Category dots
       const categoryFilledDots = Math.round((category.score / 100) * totalDots);
       for (let i = 0; i < totalDots; i++) {
-        const dotX = leftMargin + (i * 12);
-        if (i < categoryFilledDots) {
-          doc.setFillColor(0, 168, 168); // Nomadic Teal for filled dots
-        } else {
-          doc.setFillColor(245, 241, 235); // Nomadic Beige for empty dots
-        }
-        doc.circle(dotX, yPos + 3, 3, "F");
+        const dotX = margins.left + (i * dotSpacing);
+        const color = i < categoryFilledDots ? [0, 168, 168] : [245, 241, 235];
+        doc.setFillColor(...color);
+        doc.circle(dotX, yPos + 3, 4, "F");
       }
-      yPos += 10;
+      yPos += 12;
       
-      // Visual progress bar for category with Nomadic colors - made narrower
-      doc.setDrawColor(168, 153, 140); // Nomadic Taupe
-      doc.setFillColor(245, 241, 235); // Nomadic Beige
-      doc.rect(leftMargin, yPos, 120, 5, "F"); // Reduced width from 150
-      doc.setFillColor(0, 168, 168); // Nomadic Teal
-      doc.rect(leftMargin, yPos, category.score * 1.2, 5, "F"); // Adjusted scale
-      yPos += 10;
+      // Category progress bar
+      doc.setFillColor(245, 241, 235);
+      doc.rect(margins.left, yPos, progressBarWidth, 6, "F");
+      doc.setFillColor(0, 168, 168);
+      const categoryProgressWidth = (category.score / 100) * progressBarWidth;
+      doc.rect(margins.left, yPos, categoryProgressWidth, 6, "F");
+      yPos += 12;
       
-      // Time savings
-      doc.setTextColor(0, 168, 168); // Nomadic Teal
-      doc.text(`Time Savings: ${category.timeSavings}`, leftMargin, yPos);
-      doc.setTextColor(77, 77, 77); // Nomadic Text Gray
+      addLeftText(`Time Savings: ${category.timeSavings}`, 10, [0, 168, 168]);
       yPos += 8;
       
-      // Recommended tools
-      const toolsText = doc.splitTextToSize(`Recommended Tools: ${category.tools.join(", ")}`, contentWidth);
-      doc.text(toolsText, leftMargin, yPos);
-      yPos += (toolsText.length * 5); // Reduced line height
+      const toolsText = `Recommended Tools: ${category.tools.join(", ")}`;
+      const toolsLineHeight = addLeftText(toolsText, 9, [77, 77, 77], true);
+      yPos += toolsLineHeight + 5;
       
-      // Improvements
-      doc.setFontSize(9);
-      doc.text("Suggested Improvements:", leftMargin, yPos);
+      addLeftText("Suggested Improvements:", 10, [77, 77, 77]);
       yPos += 8;
       
-      category.improvements.forEach((improvement, idx) => {
-        const wrappedText = doc.splitTextToSize(`- ${improvement}`, contentWidth - 10);
-        doc.text(wrappedText, leftMargin + 5, yPos);
-        yPos += (wrappedText.length * 5); // Reduced line height
+      category.improvements.forEach((improvement) => {
+        checkNewPage();
+        const improvementText = `• ${improvement}`;
+        const lineHeight = addLeftText(improvementText, 9, [77, 77, 77], true);
+        yPos += lineHeight + 2;
       });
       
       yPos += 15;
     }
     
-    // Add call to action with Nomadic Liberty branding
-    if (yPos > 230) {
-      doc.addPage();
-      yPos = 20;
-    }
+    // CALL TO ACTION SECTION
+    checkNewPage(50);
     
-    // Create a colored rectangle for CTA with Nomadic colors
+    // CTA background
     doc.setFillColor(228, 238, 248); // Nomadic Light Blue
-    doc.rect(leftMargin, yPos, contentWidth, 45, "F");
+    doc.rect(margins.left, yPos, contentWidth, 40, "F");
     
-    doc.setFontSize(11); // Reduced from 12
-    doc.setTextColor(27, 54, 93); // Nomadic Navy
     yPos += 15;
-    doc.text("Ready to transform your workflow?", pageWidth / 2, yPos, { align: "center" });
-    
-    yPos += 12;
-    doc.setFontSize(9); // Reduced from 10
-    doc.setTextColor(77, 77, 77); // Nomadic Text Gray
-    doc.text("I'm here to help you implement these solutions", pageWidth / 2, yPos, { align: "center" });
-    
+    addCenteredText("Ready to transform your workflow?", 12, [27, 54, 93]);
     yPos += 10;
-    doc.setTextColor(0, 168, 168); // Nomadic Teal for link
-    doc.text("Schedule at: calendar.app.google/fDRgarRXA42zzqEo8", pageWidth / 2, yPos, { align: "center" });
     
-    // Add footer with Nomadic Liberty branding
-    yPos = doc.internal.pageSize.getHeight() - 10;
-    doc.setFontSize(7); // Reduced from 8
-    doc.setTextColor(168, 153, 140); // Nomadic Taupe
-    doc.text(`© ${new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.`, pageWidth / 2, yPos, { align: "center" });
+    addCenteredText("Schedule your free consultation today", 10, [77, 77, 77]);
+    yPos += 8;
+    
+    addCenteredText("calendar.app.google/fDRgarRXA42zzqEo8", 10, [0, 168, 168]);
+    yPos += 25;
+    
+    // FOOTER
+    const footerY = pageHeight - margins.bottom;
+    addCenteredText(`© ${new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.`, 8, [168, 153, 140]);
     
     // Save the PDF
     doc.save("nomadic_liberty_workflow_audit_report.pdf");
@@ -264,7 +228,7 @@ yPos += (lines.length * 5) + 15;
   }
 };
 
-// Helper function
+// Helper function remains the same
 const getCategoryName = (category: string): string => {
   const names: Record<string, string> = {
     'task-management': 'Task Management',

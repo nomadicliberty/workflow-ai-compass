@@ -115,7 +115,7 @@ const EmailCollectionForm: React.FC<EmailCollectionFormProps> = ({ onSubmit, isL
         </div>
         
         <p className="text-xs text-center text-gray-500 mt-4">
-          We'll also send a copy to our team so we can help with any questions you might have.
+          We'll also receive a copy so we can help with any questions you might have.
         </p>
       </form>
     </div>
