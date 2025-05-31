@@ -13,7 +13,7 @@ interface QuestionCardProps {
 }
 
 const QuestionCard: React.FC<QuestionCardProps> = ({ question, onAnswer, currentAnswer }) => {
-  const [answer, setAnswer] = useState<string>(currentAnswer || '');
+  const [answer, setAnswer] = useState<string>('');
 
   const handleRadioChange = (value: string) => {
     setAnswer(value);
