@@ -1,5 +1,3 @@
-// src/utils/pdfGenerator.ts - Fixed version with consistent margins
-
 import { jsPDF } from "jspdf";
 import { AuditReport } from "../types/audit";
 
@@ -13,10 +11,10 @@ export const generatePDF = async (
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Consistent margins and positioning
+    // Conservative margins to prevent text cutoff
     const margins = {
-      left: 20,
-      right: 20,
+      left: 25,
+      right: 25,
       top: 20,
       bottom: 20
     };
@@ -42,122 +40,146 @@ export const generatePDF = async (
       doc.text(text, centerX, yPos, { align: "center" });
     };
     
-    // Helper function for left-aligned text
-    const addLeftText = (text: string, fontSize: number, color: number[] = [0, 0, 0], wrap: boolean = false) => {
+    // Helper function for left-aligned text with manual wrapping
+    const addLeftText = (text: string, fontSize: number, color: number[] = [0, 0, 0], maxCharsPerLine: number = 0) => {
       doc.setFontSize(fontSize);
       doc.setTextColor(...color);
       
-      if (wrap) {
-        const splitText = doc.splitTextToSize(text, contentWidth);
-        doc.text(splitText, margins.left, yPos);
-        return splitText.length * (fontSize * 0.4); // Approximate line height
+      if (maxCharsPerLine > 0) {
+        // Manual text wrapping to prevent cutoff
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+        
+        words.forEach(word => {
+          if ((currentLine + word).length <= maxCharsPerLine) {
+            currentLine += word + ' ';
+          } else {
+            if (currentLine) lines.push(currentLine.trim());
+            currentLine = word + ' ';
+          }
+        });
+        if (currentLine) lines.push(currentLine.trim());
+        
+        lines.forEach((line, index) => {
+          checkNewPage();
+          doc.text(line, margins.left, yPos + (index * 5));
+        });
+        return lines.length * 5; // Return total height used
       } else {
         doc.text(text, margins.left, yPos);
-        return fontSize * 0.4;
+        return 5; // Single line height
       }
     };
     
     // HEADER SECTION
-    addCenteredText("Workflow AI Audit Report", 18, [0, 168, 168]); // Nomadic Teal
-    yPos += 15;
+    addCenteredText("Workflow AI Audit Report", 16, [0, 168, 168]); // Nomadic Teal
+    yPos += 12;
     
-    addCenteredText("Nomadic Liberty LLC", 11, [27, 54, 93]); // Nomadic Navy
-    yPos += 25;
+    addCenteredText("Nomadic Liberty LLC", 10, [27, 54, 93]); // Nomadic Navy
+    yPos += 20;
     
     // AI SUMMARY SECTION
     if (report.aiGeneratedSummary) {
       checkNewPage(40);
       
-      addLeftText("AI-Generated Insights", 14, [27, 54, 93]);
-      yPos += 12;
+      doc.setFontSize(12);
+      doc.setTextColor(27, 54, 93); // Nomadic Navy
+      doc.text("AI-Generated Insights", margins.left, yPos);
+      yPos += 10;
       
       // AI badge
       doc.setFillColor(0, 168, 168); // Nomadic Teal
-      doc.roundedRect(margins.left, yPos - 3, 30, 10, 2, 2, "F");
-      doc.setFontSize(8);
+      doc.roundedRect(margins.left, yPos - 2, 25, 8, 2, 2, "F");
+      doc.setFontSize(7);
       doc.setTextColor(255, 255, 255);
-      doc.text("AI-POWERED", margins.left + 2, yPos + 4);
-      yPos += 18;
+      doc.text("AI-POWERED", margins.left + 1, yPos + 3);
+      yPos += 12;
       
-      // AI summary text with proper wrapping
-      const summaryLines = doc.splitTextToSize(report.aiGeneratedSummary, contentWidth);
-      doc.setFontSize(10);
-      doc.setTextColor(77, 77, 77);
-      
-      summaryLines.forEach((line: string, index: number) => {
-        checkNewPage();
-        doc.text(line, margins.left, yPos);
-        yPos += 5;
-      });
-      yPos += 15;
+      // AI summary with MANUAL text wrapping (NO doc.splitTextToSize)
+      const summaryHeight = addLeftText(report.aiGeneratedSummary, 9, [77, 77, 77], 70);
+      yPos += summaryHeight + 10;
     }
     
     // OVERALL ASSESSMENT SECTION
-    checkNewPage(60);
+    checkNewPage(50);
     
-    addLeftText("Overall Assessment", 14, [27, 54, 93]);
-    yPos += 12;
+    doc.setFontSize(12);
+    doc.setTextColor(27, 54, 93); // Nomadic Navy
+    doc.text("Overall Assessment", margins.left, yPos);
+    yPos += 10;
     
-    addLeftText(`Rating: ${report.overallRating}`, 11, [77, 77, 77]);
-    yPos += 8;
+    doc.setFontSize(10);
+    doc.setTextColor(77, 77, 77);
+    doc.text(`Rating: ${report.overallRating}`, margins.left, yPos);
+    yPos += 7;
+    doc.text(`Score: ${report.overallScore}/100`, margins.left, yPos);
+    yPos += 10;
     
-    addLeftText(`Score: ${report.overallScore}/100`, 11, [77, 77, 77]);
-    yPos += 12;
-    
-    // Visual dots (consistently positioned)
+    // Visual dots
     const totalDots = 5;
     const filledDots = Math.round((report.overallScore / 100) * totalDots);
-    const dotSpacing = 15;
+    const dotSpacing = 12;
     
     for (let i = 0; i < totalDots; i++) {
       const dotX = margins.left + (i * dotSpacing);
       const color = i < filledDots ? [0, 168, 168] : [245, 241, 235];
       doc.setFillColor(...color);
-      doc.circle(dotX, yPos + 3, 4, "F");
+      doc.circle(dotX, yPos + 3, 3, "F");
     }
-    yPos += 15;
+    yPos += 12;
     
-    // Progress bar (consistently positioned)
-    const progressBarWidth = 120;
+    // Progress bar
+    const progressBarWidth = 100;
     doc.setFillColor(245, 241, 235); // Background
-    doc.rect(margins.left, yPos, progressBarWidth, 8, "F");
+    doc.rect(margins.left, yPos, progressBarWidth, 6, "F");
     doc.setFillColor(0, 168, 168); // Progress
     const progressWidth = (report.overallScore / 100) * progressBarWidth;
-    doc.rect(margins.left, yPos, progressWidth, 8, "F");
-    yPos += 18;
+    doc.rect(margins.left, yPos, progressWidth, 6, "F");
+    yPos += 12;
     
     // Time savings
-    addLeftText(`Potential Time Savings: ${report.totalTimeSavings}`, 11, [0, 168, 168]);
-    yPos += 20;
+    doc.setFontSize(10);
+    doc.setTextColor(0, 168, 168);
+    doc.text(`Potential Time Savings: ${report.totalTimeSavings}`, margins.left, yPos);
+    yPos += 15;
     
     // TOP RECOMMENDATIONS SECTION
-    checkNewPage(40);
+    checkNewPage(30);
     
-    addLeftText("Top Recommendations", 14, [27, 54, 93]);
-    yPos += 12;
+    doc.setFontSize(12);
+    doc.setTextColor(27, 54, 93);
+    doc.text("Top Recommendations", margins.left, yPos);
+    yPos += 10;
     
     report.topRecommendations.forEach((rec, idx) => {
       checkNewPage();
       const recommendationText = `${idx + 1}. ${rec}`;
-      const lineHeight = addLeftText(recommendationText, 10, [77, 77, 77], true);
-      yPos += lineHeight + 2;
+      const recHeight = addLeftText(recommendationText, 9, [77, 77, 77], 65);
+      yPos += recHeight + 2;
     });
-    yPos += 15;
+    yPos += 10;
     
     // CATEGORY ASSESSMENTS SECTION
-    checkNewPage(40);
+    checkNewPage(30);
     
-    addLeftText("Category Assessments", 14, [27, 54, 93]);
-    yPos += 15;
+    doc.setFontSize(12);
+    doc.setTextColor(27, 54, 93);
+    doc.text("Category Assessments", margins.left, yPos);
+    yPos += 12;
     
     for (const category of report.categories) {
-      checkNewPage(80); // Need more space for each category
+      checkNewPage(60); // Need space for each category
       
       const categoryName = getCategoryName(category.category);
-      addLeftText(categoryName, 12, [0, 168, 168]);
-      yPos += 10;
+      doc.setFontSize(11);
+      doc.setTextColor(0, 168, 168);
+      doc.text(categoryName, margins.left, yPos);
+      yPos += 8;
       
-      addLeftText(`Rating: ${category.rating} (Score: ${category.score}/100)`, 10, [77, 77, 77]);
+      doc.setFontSize(9);
+      doc.setTextColor(77, 77, 77);
+      doc.text(`Rating: ${category.rating} (Score: ${category.score}/100)`, margins.left, yPos);
       yPos += 8;
       
       // Category dots
@@ -166,58 +188,62 @@ export const generatePDF = async (
         const dotX = margins.left + (i * dotSpacing);
         const color = i < categoryFilledDots ? [0, 168, 168] : [245, 241, 235];
         doc.setFillColor(...color);
-        doc.circle(dotX, yPos + 3, 4, "F");
+        doc.circle(dotX, yPos + 3, 3, "F");
       }
-      yPos += 12;
+      yPos += 10;
       
       // Category progress bar
       doc.setFillColor(245, 241, 235);
-      doc.rect(margins.left, yPos, progressBarWidth, 6, "F");
+      doc.rect(margins.left, yPos, progressBarWidth, 5, "F");
       doc.setFillColor(0, 168, 168);
       const categoryProgressWidth = (category.score / 100) * progressBarWidth;
-      doc.rect(margins.left, yPos, categoryProgressWidth, 6, "F");
-      yPos += 12;
+      doc.rect(margins.left, yPos, categoryProgressWidth, 5, "F");
+      yPos += 10;
       
-      addLeftText(`Time Savings: ${category.timeSavings}`, 10, [0, 168, 168]);
-      yPos += 8;
+      doc.setTextColor(0, 168, 168);
+      doc.text(`Time Savings: ${category.timeSavings}`, margins.left, yPos);
+      yPos += 7;
       
+      doc.setTextColor(77, 77, 77);
       const toolsText = `Recommended Tools: ${category.tools.join(", ")}`;
-      const toolsLineHeight = addLeftText(toolsText, 9, [77, 77, 77], true);
-      yPos += toolsLineHeight + 5;
+      const toolsHeight = addLeftText(toolsText, 8, [77, 77, 77], 70);
+      yPos += toolsHeight + 5;
       
-      addLeftText("Suggested Improvements:", 10, [77, 77, 77]);
-      yPos += 8;
+      doc.text("Suggested Improvements:", margins.left, yPos);
+      yPos += 7;
       
       category.improvements.forEach((improvement) => {
         checkNewPage();
         const improvementText = `• ${improvement}`;
-        const lineHeight = addLeftText(improvementText, 9, [77, 77, 77], true);
-        yPos += lineHeight + 2;
+        const impHeight = addLeftText(improvementText, 8, [77, 77, 77], 65);
+        yPos += impHeight + 2;
       });
       
-      yPos += 15;
+      yPos += 10;
     }
     
     // CALL TO ACTION SECTION
-    checkNewPage(50);
+    checkNewPage(40);
     
     // CTA background
     doc.setFillColor(228, 238, 248); // Nomadic Light Blue
-    doc.rect(margins.left, yPos, contentWidth, 40, "F");
+    doc.rect(margins.left, yPos, contentWidth, 35, "F");
     
-    yPos += 15;
-    addCenteredText("Ready to transform your workflow?", 12, [27, 54, 93]);
-    yPos += 10;
-    
-    addCenteredText("Schedule your free consultation today", 10, [77, 77, 77]);
+    yPos += 12;
+    addCenteredText("Ready to transform your workflow?", 11, [27, 54, 93]);
     yPos += 8;
     
-    addCenteredText("calendar.app.google/fDRgarRXA42zzqEo8", 10, [0, 168, 168]);
-    yPos += 25;
+    addCenteredText("Schedule your free consultation today", 9, [77, 77, 77]);
+    yPos += 7;
+    
+    addCenteredText("calendar.app.google/fDRgarRXA42zzqEo8", 9, [0, 168, 168]);
+    yPos += 20;
     
     // FOOTER
     const footerY = pageHeight - margins.bottom;
-    addCenteredText(`© ${new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.`, 8, [168, 153, 140]);
+    doc.setFontSize(7);
+    doc.setTextColor(168, 153, 140);
+    doc.text(`© ${new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.`, centerX, footerY, { align: "center" });
     
     // Save the PDF
     doc.save("nomadic_liberty_workflow_audit_report.pdf");
@@ -228,7 +254,7 @@ export const generatePDF = async (
   }
 };
 
-// Helper function remains the same
+// Helper function
 const getCategoryName = (category: string): string => {
   const names: Record<string, string> = {
     'task-management': 'Task Management',
