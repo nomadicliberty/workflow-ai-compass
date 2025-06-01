@@ -110,7 +110,7 @@ export class PDFRenderer extends BaseRenderer {
     }
     
     // AI content as regular text - with proper line-by-line rendering for page breaks
-    const contentLines = this.doc.splitTextToSize(section.content.text, this.contentWidth);
+    const contentLines = this.doc.splitTextToSize(section.content.text, this.contentWidth - 10);
     const lineHeight = 10 * 0.4; // 10pt font size
     
     this.doc.setFontSize(10);
