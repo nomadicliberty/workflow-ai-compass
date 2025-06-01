@@ -1,4 +1,3 @@
-
 import { jsPDF } from "jspdf";
 import { BaseRenderer } from './BaseRenderer';
 import { ReportSection } from '../types/reportData';
@@ -26,8 +25,8 @@ export class PDFRenderer extends BaseRenderer {
     this.currentY = this.margins.top;
   }
 
-  private checkNewPage(requiredHeight: number = 15): boolean {
-    if (this.currentY + requiredHeight > this.pageHeight - this.margins.bottom) {
+  private checkNewPage(requiredHeight: number = 20): boolean {
+    if (this.currentY + requiredHeight > this.pageHeight - this.margins.bottom - 10) {
       this.doc.addPage();
       this.currentY = this.margins.top;
       return true;
@@ -88,48 +87,49 @@ export class PDFRenderer extends BaseRenderer {
   }
 
   renderSummary(section: ReportSection): void {
-  if (section.content.isAI) {
-    // First render the small beige card with title and disclaimer
-    this.checkNewPage(35);
-    this.addCardBackground(this.contentWidth, 30); // Increased to 30mm
-    this.currentY += 3;
-    
-    // Section title
-    const titleHeight = this.addText(section.title || 'AI Assessment', this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
-    this.currentY += titleHeight + 4;
-    
-    // Disclaimer in the card
-    if (section.content.disclaimer) {
-      const disclaimerHeight = this.addText(section.content.disclaimer, this.margins.left + 3, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
-      this.currentY += disclaimerHeight + 8;
+    if (section.content.isAI) {
+      // Calculate disclaimer height for proper card sizing
+      const disclaimerLines = section.content.disclaimer ? 
+        this.doc.splitTextToSize(section.content.disclaimer, this.contentWidth - 6) : [];
+      const cardHeight = 15 + (disclaimerLines.length * 4);
+      
+      // Only check for new page if we really need it (conservative check)
+      this.checkNewPage(cardHeight + 5);
+      
+      // Add small beige card for title and disclaimer only
+      this.addCardBackground(this.contentWidth, cardHeight);
+      this.currentY += 3;
+      
+      // Section title
+      const titleHeight = this.addText(section.title || 'AI Assessment', this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
+      this.currentY += titleHeight + 4;
+      
+      // Disclaimer in the card
+      if (section.content.disclaimer) {
+        const disclaimerHeight = this.addText(section.content.disclaimer, this.margins.left + 3, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
+        this.currentY += disclaimerHeight + 8;
+      }
+      
+      // AI content as regular text (outside the card) - no forced page break
+      const contentHeight = this.addText(section.content.text, this.margins.left, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth);
+      this.currentY += contentHeight + 15;
+      
+    } else {
+      // Non-AI summaries - original logic
+      const textLines = this.doc.splitTextToSize(section.content.text, this.contentWidth - 6);
+      const estimatedHeight = Math.max(40, textLines.length * 4 + 25);
+      
+      this.checkNewPage(estimatedHeight);
+      this.addCardBackground(this.contentWidth, estimatedHeight);
+      this.currentY += 3;
+      
+      const titleHeight = this.addText(section.title || 'Assessment Summary', this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
+      this.currentY += titleHeight + 4;
+      
+      const contentHeight = this.addText(section.content.text, this.margins.left + 3, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
+      this.currentY += contentHeight + 15;
     }
-    
-    // Now render the AI content as regular text (outside the card)
-    this.checkNewPage(30);
-    const contentHeight = this.addText(section.content.text, this.margins.left, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth);
-    this.currentY += contentHeight + 15;
-    
-  } else {
-    // Original logic for non-AI summaries
-    const textLines = this.doc.splitTextToSize(section.content.text, this.contentWidth - 6);
-    const estimatedHeight = Math.max(40, textLines.length * 4 + 25);
-    
-    this.checkNewPage(estimatedHeight);
-    this.addCardBackground(this.contentWidth, estimatedHeight);
-    this.currentY += 3;
-    
-    const titleHeight = this.addText(section.title || 'Assessment Summary', this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
-    this.currentY += titleHeight + 4;
-    
-    const contentHeight = this.addText(section.content.text, this.margins.left + 3, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
-    this.currentY += contentHeight + 15;
   }
-}
-  
-  // Main content
-  const contentHeight = this.addText(section.content.text, this.margins.left + 3, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
-  this.currentY += contentHeight + 15; // Increased from 12
-}
 
   renderMetrics(section: ReportSection): void {
     this.checkNewPage(80);
@@ -137,7 +137,7 @@ export class PDFRenderer extends BaseRenderer {
     const { rating, score, timeSavings, recommendations, ratingDescription } = section.content;
     
     // Add card background
-    this.addCardBackground(this.contentWidth, 55);
+    this.addCardBackground(this.contentWidth, 70);
     this.currentY += 3;
     
     // Section title with navy background
@@ -163,7 +163,7 @@ export class PDFRenderer extends BaseRenderer {
     
     // Enhanced progress bar
     this.renderEnhancedProgressBar(score);
-    this.currentY += 15; // Increased spacing to prevent overlap
+    this.currentY += 15;
     
     // Rating description if available
     if (ratingDescription) {
@@ -190,7 +190,6 @@ export class PDFRenderer extends BaseRenderer {
     
     recommendations.forEach((rec: string, idx: number) => {
       this.checkNewPage(10);
-      // Add numbered bullet point
       const bulletText = `${idx + 1}. ${rec}`;
       const recHeight = this.addText(bulletText, this.margins.left + 6, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 10);
       this.currentY += recHeight + 3;
@@ -200,16 +199,20 @@ export class PDFRenderer extends BaseRenderer {
   }
 
   renderCategory(section: ReportSection): void {
-    this.checkNewPage(45);
-    
     const { categoryName, rating, score, tools, improvements, timeSavings } = section.content;
     
+    // Calculate improvements height for better space estimation
+    const improvementsHeight = improvements.length * 5 + 10;
+    const totalEstimatedHeight = Math.max(60, improvementsHeight + 40);
+    
+    this.checkNewPage(totalEstimatedHeight);
+    
     // Add card background
-    this.addCardBackground(this.contentWidth, 40);
+    this.addCardBackground(this.contentWidth, totalEstimatedHeight);
     
     // Category header with teal accent
     this.doc.setFillColor(...designTokens.colors['nomadic-teal'].rgb);
-    this.doc.rect(this.margins.left, this.currentY, 4, 35, "F");
+    this.doc.rect(this.margins.left, this.currentY, 4, totalEstimatedHeight, "F");
     this.currentY += 3;
     
     // Category title
@@ -222,7 +225,7 @@ export class PDFRenderer extends BaseRenderer {
     
     // Enhanced progress bar (smaller for categories)
     this.renderEnhancedProgressBar(score, 60);
-    this.currentY += 12; // Increased spacing
+    this.currentY += 12;
     
     // Time savings
     const timeSavingsHeight = this.addText(`Time Savings: ${timeSavings}`, this.margins.left + 8, 10, designTokens.colors['nomadic-teal'].rgb);
@@ -244,7 +247,7 @@ export class PDFRenderer extends BaseRenderer {
       this.currentY += impHeight + 2;
     });
     
-    this.currentY += 10;
+    this.currentY += 15;
   }
 
   renderCTA(section: ReportSection): void {
@@ -271,8 +274,7 @@ export class PDFRenderer extends BaseRenderer {
     // Link text only (no button graphic)
     const linkHeight = this.addCenteredText(section.content.linkText, 10, designTokens.colors['nomadic-teal'].rgb);
     this.currentY += linkHeight + 8;
-    
-   }
+  }
 
   renderFooter(section: ReportSection): void {
     // Add footer at bottom of page
@@ -340,9 +342,10 @@ export class PDFRenderer extends BaseRenderer {
         case 'category':
           this.renderCategory(section);
           break;
-        //case 'cta':
-        //  this.renderCTA(section);
-        //  break;
+        // CTA is commented out as requested
+        // case 'cta':
+        //   this.renderCTA(section);
+        //   break;
         case 'footer':
           this.renderFooter(section);
           break;
