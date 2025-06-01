@@ -87,32 +87,43 @@ export class PDFRenderer extends BaseRenderer {
   }
 
   renderSummary(section: ReportSection): void {
-    if (section.content.isAI) {
-      // Calculate disclaimer height for proper card sizing
-      const disclaimerLines = section.content.disclaimer ? 
-        this.doc.splitTextToSize(section.content.disclaimer, this.contentWidth - 6) : [];
-      const cardHeight = 15 + (disclaimerLines.length * 4);
-      
-      // Only check for new page if we really need it (conservative check)
-      this.checkNewPage(cardHeight + 5);
-      
-      // Add small beige card for title and disclaimer only
-      this.addCardBackground(this.contentWidth, cardHeight);
-      this.currentY += 3;
-      
-      // Section title
-      const titleHeight = this.addText(section.title || 'AI Assessment', this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
-      this.currentY += titleHeight + 4;
-      
-      // Disclaimer in the card
-      if (section.content.disclaimer) {
-        const disclaimerHeight = this.addText(section.content.disclaimer, this.margins.left + 3, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
-        this.currentY += disclaimerHeight + 8;
-      }
-      
-      // AI content as regular text (outside the card) - no forced page break
-      const contentHeight = this.addText(section.content.text, this.margins.left, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth);
-      this.currentY += contentHeight + 15;
+  if (section.content.isAI) {
+    // Calculate disclaimer height for proper card sizing
+    const disclaimerLines = section.content.disclaimer ? 
+      this.doc.splitTextToSize(section.content.disclaimer, this.contentWidth - 6) : [];
+    const cardHeight = 15 + (disclaimerLines.length * 4);
+    
+    this.checkNewPage(cardHeight + 5);
+    
+    // Add small beige card for title and disclaimer only
+    this.addCardBackground(this.contentWidth, cardHeight);
+    this.currentY += 3;
+    
+    // Section title
+    const titleHeight = this.addText(section.title || 'AI Assessment', this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
+    this.currentY += titleHeight + 4;
+    
+    // Disclaimer in the card
+    if (section.content.disclaimer) {
+      const disclaimerHeight = this.addText(section.content.disclaimer, this.margins.left + 3, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
+      this.currentY += disclaimerHeight + 8;
+    }
+    
+    // AI content as regular text - with proper line-by-line rendering for page breaks
+    const contentLines = this.doc.splitTextToSize(section.content.text, this.contentWidth);
+    const lineHeight = 10 * 0.4; // 10pt font size
+    
+    this.doc.setFontSize(10);
+    this.doc.setTextColor(...designTokens.colors['nomadic-gray'].rgb);
+    
+    contentLines.forEach((line: string) => {
+      this.checkNewPage(lineHeight + 2);
+      this.doc.text(line, this.margins.left, this.currentY);
+      this.currentY += lineHeight;
+    });
+    
+    this.currentY += 15; // Final spacing
+  }
       
     } else {
       // Non-AI summaries - original logic
@@ -199,56 +210,55 @@ export class PDFRenderer extends BaseRenderer {
   }
 
   renderCategory(section: ReportSection): void {
-    const { categoryName, rating, score, tools, improvements, timeSavings } = section.content;
-    
-    // Calculate improvements height for better space estimation
-    const improvementsHeight = improvements.length * 5 + 10;
-    const totalEstimatedHeight = Math.max(60, improvementsHeight + 40);
-    
-    this.checkNewPage(totalEstimatedHeight);
-    
-    // Add card background
-    this.addCardBackground(this.contentWidth, totalEstimatedHeight);
-    
-    // Category header with teal accent
-    this.doc.setFillColor(...designTokens.colors['nomadic-teal'].rgb);
-    this.doc.rect(this.margins.left, this.currentY, 4, totalEstimatedHeight, "F");
-    this.currentY += 3;
-    
-    // Category title
-    const titleHeight = this.addText(categoryName, this.margins.left + 8, 12, designTokens.colors['nomadic-navy'].rgb);
-    this.currentY += titleHeight + 4;
-    
-    // Rating and score in one line
-    const ratingHeight = this.addText(`${rating} (Score: ${score}/100)`, this.margins.left + 8, 10, designTokens.colors['nomadic-gray'].rgb);
-    this.currentY += ratingHeight + 4;
-    
-    // Enhanced progress bar (smaller for categories)
-    this.renderEnhancedProgressBar(score, 60);
-    this.currentY += 12;
-    
-    // Time savings
-    const timeSavingsHeight = this.addText(`Time Savings: ${timeSavings}`, this.margins.left + 8, 10, designTokens.colors['nomadic-teal'].rgb);
-    this.currentY += timeSavingsHeight + 4;
-    
-    // Tools
-    const toolsText = `Tools: ${tools.join(", ")}`;
-    const toolsHeight = this.addText(toolsText, this.margins.left + 8, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 12);
-    this.currentY += toolsHeight + 4;
-    
-    // Improvements
-    const impTitleHeight = this.addText("Improvements:", this.margins.left + 8, 10, designTokens.colors['nomadic-gray'].rgb);
-    this.currentY += impTitleHeight + 2;
-    
-    improvements.forEach((improvement: string) => {
-      this.checkNewPage(8);
-      const impText = `• ${improvement}`;
-      const impHeight = this.addText(impText, this.margins.left + 10, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 14);
-      this.currentY += impHeight + 2;
-    });
-    
-    this.currentY += 15;
-  }
+  const { categoryName, rating, score, tools, improvements, timeSavings } = section.content;
+  
+  // Fixed card height - only covers the top section, not everything
+  const cardHeight = 45; // Fixed height that covers title, rating, progress bar, and time savings
+  
+  this.checkNewPage(cardHeight + improvements.length * 5 + 20);
+  
+  // Add card background - ONLY for the top section
+  this.addCardBackground(this.contentWidth, cardHeight);
+  
+  // Category header with teal accent
+  this.doc.setFillColor(...designTokens.colors['nomadic-teal'].rgb);
+  this.doc.rect(this.margins.left, this.currentY, 4, cardHeight, "F");
+  this.currentY += 3;
+  
+  // Category title
+  const titleHeight = this.addText(categoryName, this.margins.left + 8, 12, designTokens.colors['nomadic-navy'].rgb);
+  this.currentY += titleHeight + 4;
+  
+  // Rating and score in one line
+  const ratingHeight = this.addText(`${rating} (Score: ${score}/100)`, this.margins.left + 8, 10, designTokens.colors['nomadic-gray'].rgb);
+  this.currentY += ratingHeight + 4;
+  
+  // Enhanced progress bar
+  this.renderEnhancedProgressBar(score, 60);
+  this.currentY += 12;
+  
+  // Time savings - STILL IN THE CARD
+  const timeSavingsHeight = this.addText(`Time Savings: ${timeSavings}`, this.margins.left + 8, 10, designTokens.colors['nomadic-teal'].rgb);
+  this.currentY += timeSavingsHeight + 8;
+  
+  // NOW OUTSIDE THE CARD - Tools and improvements
+  const toolsText = `Tools: ${tools.join(", ")}`;
+  const toolsHeight = this.addText(toolsText, this.margins.left, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth);
+  this.currentY += toolsHeight + 4;
+  
+  // Improvements
+  const impTitleHeight = this.addText("Improvements:", this.margins.left, 10, designTokens.colors['nomadic-gray'].rgb);
+  this.currentY += impTitleHeight + 2;
+  
+  improvements.forEach((improvement: string) => {
+    this.checkNewPage(8);
+    const impText = `• ${improvement}`;
+    const impHeight = this.addText(impText, this.margins.left + 5, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 5);
+    this.currentY += impHeight + 2;
+  });
+  
+  this.currentY += 15;
+}
 
   renderCTA(section: ReportSection): void {
     this.checkNewPage(25);
