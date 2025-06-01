@@ -151,27 +151,10 @@ const generateReportHtml = (
   painPoint?: string,
   techReadiness?: string
 ): string => {
-  let personalizedIntro = "";
-  if (painPoint || techReadiness) {
-    if (painPoint) {
-      personalizedIntro += `We understand that "${painPoint}" is your primary operational challenge. `;
-    }
-
-    if (techReadiness) {
-      if (techReadiness.includes("very eager") || techReadiness.includes("open to")) {
-        personalizedIntro += "Your team's enthusiasm for new technology positions you well to implement the suggested automation solutions.";
-      } else if (techReadiness.includes("resistant") || techReadiness.includes("hesitant")) {
-        personalizedIntro += "We've focused on solutions that are user-friendly and come with excellent support resources for teams that may need extra assistance with new technology.";
-      } else {
-        personalizedIntro += "Our recommendations are tailored to match your team's comfort level with technology adoption.";
-      }
-    }
-  }
-
   // Add AI-generated summary section if available
   const aiSummarySection = report.aiGeneratedSummary ? `
     <div class="section">
-      <h2>AI-Generated Insights</h2>
+      <h2>✨ AI-Generated Insights</h2>
       <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #00A8A8;">
         <p style="white-space: pre-line; line-height: 1.6;">${report.aiGeneratedSummary}</p>
       </div>
@@ -201,22 +184,14 @@ const generateReportHtml = (
         .dot-filled { background-color: #00A8A8; }
         .dot-empty { background-color: #e0e0e0; }
         .footer { background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; }
-        .button { background-color: #00A8A8; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; }
+        .button { background-color: #00A8A8; color: #FFFFFF; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-        <img class="logo" src="https://i.ibb.co/WpNwhk1v/Nomadic-Liberty-logo-cropped.jpg" alt="Nomadic Liberty LLC" />
           <h1>Your Workflow AI Audit Results</h1>
         </div>
-
-        ${personalizedIntro ? `
-        <div class="section">
-          <h2>Personalized Assessment</h2>
-          <p>${personalizedIntro}</p>
-        </div>
-        ` : ''}
 
         ${aiSummarySection}
 
@@ -269,7 +244,7 @@ const generateReportHtml = (
 
         <div class="section" style="text-align: center;">
           <p><strong>Ready to enhance your workflow?</strong></p>
-          <a href="https://calendar.app.google/fDRgarRXA42zzqEo8" class="button">Book a Free 20-Minute Consultation</a>
+          <a href="https://calendar.app.google/fDRgarRXA42zzqEo8" class="button" style="background-color: #00A8A8; color: #FFFFFF;">Book a Free 20-Minute Consultation</a>
         </div>
 
         <div class="footer">
