@@ -150,27 +150,7 @@ export const generatePDF = async (
       yPos = (doc as any).lastAutoTable.finalY + 15;
     }
     
-    // Add call to action
-    if (yPos > 240) {
-      doc.addPage();
-      yPos = 20;
-    }
-    
-    doc.setFillColor(230, 225, 255); // Light purple
-    doc.rect(14, yPos, pageWidth - 28, 30, "F");
-    
-    doc.setFontSize(12);
-    doc.setTextColor(110, 70, 199);
-    yPos += 10;
-    doc.text("Ready to transform your workflow?", pageWidth / 2, yPos, { align: "center" });
-    
-    yPos += 7;
-    doc.setFontSize(10);
-    doc.text("Book a free 20-minute AI consultation call", pageWidth / 2, yPos, { align: "center" });
-    
-    yPos += 7;
-    doc.text("https://calendly.com/workflow-ai/discovery", pageWidth / 2, yPos, { align: "center" });
-    
+      
     // Add footer
     yPos = doc.internal.pageSize.getHeight() - 10;
     doc.setFontSize(8);
