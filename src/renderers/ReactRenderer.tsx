@@ -158,6 +158,9 @@ export class ReactRenderer extends BaseRenderer {
     );
   }
 
+  renderFooter(section: ReportSection): React.ReactElement {
+  return <div key={section.id}></div>;
+}
   
   protected combineRenderedSections(sections: any[]): React.ReactElement {
     // Filter out category sections for special handling
