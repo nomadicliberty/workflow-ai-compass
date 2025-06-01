@@ -119,27 +119,7 @@ export class EmailRenderer extends BaseRenderer {
   }
 
   protected combineRenderedSections(sections: string[]): string {
-    const categorySections = this.report.sections
-      .filter(s => s.type === 'category')
-      .map(s => this.renderCategory(s))
-      .join('');
-
-    // Find metrics section and insert categories after it
-    const metricsIndex = sections.findIndex(section => 
-      section.includes('Overall Assessment') || section.includes('Top Recommendations')
-    );
-    
-    const finalSections = [...sections];
-    if (categorySections && metricsIndex >= 0) {
-      const categorySection = `
-        <div class="section">
-          <h2 style="color: #1B365D;">Detailed Analysis by Area:</h2>
-          ${categorySections}
-        </div>
-      `;
-      finalSections.splice(metricsIndex + 1, 0, categorySection);
-    }
-
+    // Simply render sections in order - no custom category logic
     return `
       <!DOCTYPE html>
       <html>
@@ -148,7 +128,7 @@ export class EmailRenderer extends BaseRenderer {
       </head>
       <body>
         <div class="container">
-          ${finalSections.join('')}
+          ${sections.join('')}
         </div>
       </body>
       </html>

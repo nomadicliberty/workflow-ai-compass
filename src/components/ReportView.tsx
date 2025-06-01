@@ -6,10 +6,8 @@ import { RotateCcw } from 'lucide-react';
 import { buildFormattedReport } from '../services/ReportBuilder';
 import { ReactRenderer } from '../renderers/ReactRenderer';
 
-// Import the components we still need that aren't part of the main report
-import BookCallSection from './report/BookCallSection';
+// Import only the components we need (removing redundant ones)
 import ExportSection from './report/ExportSection';
-import CallToAction from './report/CallToAction';
 
 interface ReportViewProps {
   report: AuditReport;
@@ -45,11 +43,8 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail, a
   
   return (
     <div className="animate-fade-in">
-      {/* Rendered report content */}
+      {/* Rendered report content (includes the CTA from renderer) */}
       {renderedReport}
-      
-      {/* Book a Call Button */}
-      <BookCallSection />
       
       {/* Export Options */}
       <ExportSection 
@@ -58,9 +53,6 @@ const ReportView: React.FC<ReportViewProps> = ({ report, onRestart, userEmail, a
         painPointAnswer={painPointAnswer}
         techReadinessAnswer={techReadinessAnswer}
       />
-      
-      {/* Call to Action */}
-      <CallToAction />
       
       {/* Restart Button */}
       <div className="mt-8 text-center">

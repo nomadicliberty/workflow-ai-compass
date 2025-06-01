@@ -40,9 +40,8 @@ export class PDFRenderer extends BaseRenderer {
     this.doc.setTextColor(...color);
     
     if (maxWidth) {
-      // Use jsPDF's built-in text wrapping
       const lines = this.doc.splitTextToSize(text, maxWidth);
-      const lineHeight = fontSize * 0.35; // Convert points to mm
+      const lineHeight = fontSize * 0.4; // Improved line height
       
       lines.forEach((line: string, index: number) => {
         if (index > 0) {
@@ -54,7 +53,7 @@ export class PDFRenderer extends BaseRenderer {
       return lines.length * lineHeight;
     } else {
       this.doc.text(text, x, this.currentY);
-      return fontSize * 0.35;
+      return fontSize * 0.4;
     }
   }
 
@@ -62,193 +61,262 @@ export class PDFRenderer extends BaseRenderer {
     this.doc.setFontSize(fontSize);
     this.doc.setTextColor(...color);
     this.doc.text(text, this.pageWidth / 2, this.currentY, { align: "center" });
-    return fontSize * 0.35;
+    return fontSize * 0.4;
+  }
+
+  private addCardBackground(width: number, height: number): void {
+    this.doc.setFillColor(...designTokens.colors['nomadic-beige'].rgb);
+    this.doc.setDrawColor(...designTokens.colors['nomadic-taupe'].rgb);
+    this.doc.setLineWidth(0.2);
+    this.doc.roundedRect(this.margins.left, this.currentY - 2, width, height, 2, 2, "FD");
   }
 
   renderHeader(section: ReportSection): void {
-    // Company name - centered
-    const titleHeight = this.addCenteredText(section.content.companyName, 12, designTokens.colors['nomadic-navy'].rgb);
-    this.currentY += titleHeight + 3;
+    // Add header background
+    this.doc.setFillColor(...designTokens.colors['nomadic-navy'].rgb);
+    this.doc.rect(0, 0, this.pageWidth, 40, "F");
     
-    // Main title - centered  
-    const mainTitleHeight = this.addCenteredText(section.content.title, 18, designTokens.colors['nomadic-teal'].rgb);
-    this.currentY += mainTitleHeight + 2;
+    this.currentY = 15;
     
-    // Subtitle - centered
-    const subtitleHeight = this.addCenteredText(section.content.subtitle, 10, designTokens.colors['nomadic-gray'].rgb);
-    this.currentY += subtitleHeight + 8;
+    // Company name - centered in white
+    const titleHeight = this.addCenteredText(section.content.companyName, 14, designTokens.colors['nomadic-white'].rgb);
+    this.currentY += titleHeight + 4;
+    
+    // Main title - centered in white
+    const mainTitleHeight = this.addCenteredText(section.content.title, 20, designTokens.colors['nomadic-white'].rgb);
+    this.currentY += mainTitleHeight + 3;
+    
+    // Subtitle - centered in white
+    const subtitleHeight = this.addCenteredText(section.content.subtitle, 11, designTokens.colors['nomadic-white'].rgb);
+    this.currentY += subtitleHeight + 15;
   }
 
   renderSummary(section: ReportSection): void {
-    this.checkNewPage(30);
+    this.checkNewPage(35);
     
-    // Section title
-    const titleHeight = this.addText(section.title || 'Summary', this.margins.left, 14, designTokens.colors['nomadic-navy'].rgb);
-    this.currentY += titleHeight + 3;
+    // Add card background
+    const estimatedHeight = 30;
+    this.addCardBackground(this.contentWidth, estimatedHeight);
+    this.currentY += 3;
     
     if (section.content.isAI) {
       // AI badge
       this.doc.setFillColor(...designTokens.colors['nomadic-teal'].rgb);
-      this.doc.roundedRect(this.margins.left, this.currentY, 25, 6, 1, 1, "F");
-      this.doc.setFontSize(8);
+      this.doc.roundedRect(this.margins.left + 3, this.currentY, 30, 7, 1, 1, "F");
+      this.doc.setFontSize(9);
       this.doc.setTextColor(255, 255, 255);
-      this.doc.text("AI-POWERED", this.margins.left + 1, this.currentY + 4);
-      this.currentY += 8;
+      this.doc.text("AI-POWERED INSIGHTS", this.margins.left + 5, this.currentY + 5);
+      this.currentY += 10;
+      
+      // Section title
+      const titleHeight = this.addText(section.title || 'AI Assessment', this.margins.left + 3, 16, designTokens.colors['nomadic-navy'].rgb);
+      this.currentY += titleHeight + 4;
       
       // Disclaimer
       if (section.content.disclaimer) {
-        const disclaimerHeight = this.addText(section.content.disclaimer, this.margins.left, 8, designTokens.colors['nomadic-gray'].rgb, this.contentWidth);
-        this.currentY += disclaimerHeight + 3;
+        const disclaimerHeight = this.addText(section.content.disclaimer, this.margins.left + 3, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
+        this.currentY += disclaimerHeight + 4;
       }
+    } else {
+      // Section title
+      const titleHeight = this.addText(section.title || 'Assessment Summary', this.margins.left + 3, 16, designTokens.colors['nomadic-navy'].rgb);
+      this.currentY += titleHeight + 4;
     }
     
     // Main content
-    const contentHeight = this.addText(section.content.text, this.margins.left, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth);
-    this.currentY += contentHeight + 8;
+    const contentHeight = this.addText(section.content.text, this.margins.left + 3, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
+    this.currentY += contentHeight + 12;
   }
 
   renderMetrics(section: ReportSection): void {
-    this.checkNewPage(50);
+    this.checkNewPage(60);
     
     const { rating, score, timeSavings, recommendations } = section.content;
     
-    // Section title
-    const titleHeight = this.addText(section.title, this.margins.left, 14, designTokens.colors['nomadic-navy'].rgb);
-    this.currentY += titleHeight + 5;
+    // Add card background
+    this.addCardBackground(this.contentWidth, 55);
+    this.currentY += 3;
     
-    // Rating and score
-    const ratingHeight = this.addText(`Rating: ${rating}`, this.margins.left, 10, designTokens.colors['nomadic-gray'].rgb);
-    this.currentY += ratingHeight + 2;
+    // Section title with navy background
+    this.doc.setFillColor(...designTokens.colors['nomadic-navy'].rgb);
+    this.doc.rect(this.margins.left, this.currentY, this.contentWidth, 8, "F");
+    this.doc.setFontSize(16);
+    this.doc.setTextColor(255, 255, 255);
+    this.doc.text(section.title, this.margins.left + 3, this.currentY + 6);
+    this.currentY += 12;
     
-    const scoreHeight = this.addText(`Score: ${score}/100`, this.margins.left, 10, designTokens.colors['nomadic-gray'].rgb);
-    this.currentY += scoreHeight + 5;
+    // Rating badge
+    this.doc.setFillColor(...designTokens.colors['nomadic-teal'].rgb);
+    this.doc.setDrawColor(...designTokens.colors['nomadic-teal'].rgb);
+    this.doc.roundedRect(this.margins.left + 3, this.currentY, 35, 7, 2, 2, "FD");
+    this.doc.setFontSize(10);
+    this.doc.setTextColor(255, 255, 255);
+    this.doc.text(rating, this.margins.left + 5, this.currentY + 5);
+    this.currentY += 12;
     
-    // Visual dots
-    this.renderDots(score);
-    this.currentY += 8;
+    // Score with enhanced styling
+    const scoreHeight = this.addText(`Automation Score: ${score}/100`, this.margins.left + 3, 12, designTokens.colors['nomadic-navy'].rgb);
+    this.currentY += scoreHeight + 3;
     
-    // Progress bar
-    this.renderProgressBar(score);
-    this.currentY += 8;
+    // Enhanced progress bar
+    this.renderEnhancedProgressBar(score);
+    this.currentY += 10;
     
-    // Time savings
-    const timeSavingsHeight = this.addText(`Potential Time Savings: ${timeSavings}`, this.margins.left, 10, designTokens.colors['nomadic-teal'].rgb);
-    this.currentY += timeSavingsHeight + 8;
+    // Time savings with highlight box
+    this.doc.setFillColor(...designTokens.colors['nomadic-lightBlue'].rgb);
+    this.doc.setDrawColor(...designTokens.colors['nomadic-teal'].rgb);
+    this.doc.roundedRect(this.margins.left + 3, this.currentY, this.contentWidth - 6, 10, 1, 1, "FD");
+    this.doc.setFontSize(11);
+    this.doc.setTextColor(...designTokens.colors['nomadic-navy'].rgb);
+    this.doc.text("Estimated Time Savings", this.margins.left + 5, this.currentY + 4);
+    this.doc.setFontSize(14);
+    this.doc.setTextColor(...designTokens.colors['nomadic-teal'].rgb);
+    this.doc.text(timeSavings, this.margins.left + 5, this.currentY + 8);
+    this.currentY += 15;
     
     // Top recommendations
-    this.checkNewPage(20);
-    const recTitleHeight = this.addText("Top Recommendations", this.margins.left, 12, designTokens.colors['nomadic-navy'].rgb);
-    this.currentY += recTitleHeight + 3;
+    this.checkNewPage(25);
+    const recTitleHeight = this.addText("Top Recommendations", this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
+    this.currentY += recTitleHeight + 4;
     
     recommendations.forEach((rec: string, idx: number) => {
-      this.checkNewPage(10);
-      const recText = `${idx + 1}. ${rec}`;
-      const recHeight = this.addText(recText, this.margins.left, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 5);
-      this.currentY += recHeight + 2;
+      this.checkNewPage(12);
+      // Add bullet point with teal color
+      this.doc.setFillColor(...designTokens.colors['nomadic-teal'].rgb);
+      this.doc.circle(this.margins.left + 6, this.currentY + 2, 1, "F");
+      
+      const recText = `${rec}`;
+      const recHeight = this.addText(recText, this.margins.left + 10, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 10);
+      this.currentY += recHeight + 3;
     });
     
-    this.currentY += 8;
+    this.currentY += 10;
   }
 
   renderCategory(section: ReportSection): void {
-    this.checkNewPage(40);
+    this.checkNewPage(45);
     
     const { categoryName, rating, score, tools, improvements, timeSavings } = section.content;
     
+    // Add card background
+    this.addCardBackground(this.contentWidth, 40);
+    
+    // Category header with teal accent
+    this.doc.setFillColor(...designTokens.colors['nomadic-teal'].rgb);
+    this.doc.rect(this.margins.left, this.currentY, 4, 35, "F");
+    this.currentY += 3;
+    
     // Category title
-    const titleHeight = this.addText(categoryName, this.margins.left, 12, designTokens.colors['nomadic-teal'].rgb);
-    this.currentY += titleHeight + 3;
+    const titleHeight = this.addText(categoryName, this.margins.left + 8, 14, designTokens.colors['nomadic-navy'].rgb);
+    this.currentY += titleHeight + 4;
     
-    // Rating and score
-    const ratingHeight = this.addText(`Rating: ${rating} (Score: ${score}/100)`, this.margins.left, 9, designTokens.colors['nomadic-gray'].rgb);
-    this.currentY += ratingHeight + 3;
+    // Rating and score in one line
+    const ratingHeight = this.addText(`${rating} (Score: ${score}/100)`, this.margins.left + 8, 10, designTokens.colors['nomadic-gray'].rgb);
+    this.currentY += ratingHeight + 4;
     
-    // Visual dots
-    this.renderDots(score);
-    this.currentY += 6;
-    
-    // Progress bar
-    this.renderProgressBar(score, 80); // Smaller progress bar for categories
-    this.currentY += 6;
+    // Enhanced progress bar (smaller for categories)
+    this.renderEnhancedProgressBar(score, 60);
+    this.currentY += 8;
     
     // Time savings
-    const timeSavingsHeight = this.addText(`Time Savings: ${timeSavings}`, this.margins.left, 9, designTokens.colors['nomadic-teal'].rgb);
-    this.currentY += timeSavingsHeight + 3;
+    const timeSavingsHeight = this.addText(`Time Savings: ${timeSavings}`, this.margins.left + 8, 10, designTokens.colors['nomadic-teal'].rgb);
+    this.currentY += timeSavingsHeight + 4;
     
     // Tools
-    const toolsText = `Recommended Tools: ${tools.join(", ")}`;
-    const toolsHeight = this.addText(toolsText, this.margins.left, 8, designTokens.colors['nomadic-gray'].rgb, this.contentWidth);
-    this.currentY += toolsHeight + 3;
+    const toolsText = `Tools: ${tools.join(", ")}`;
+    const toolsHeight = this.addText(toolsText, this.margins.left + 8, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 12);
+    this.currentY += toolsHeight + 4;
     
     // Improvements
-    const impTitleHeight = this.addText("Suggested Improvements:", this.margins.left, 9, designTokens.colors['nomadic-gray'].rgb);
+    const impTitleHeight = this.addText("Improvements:", this.margins.left + 8, 10, designTokens.colors['nomadic-gray'].rgb);
     this.currentY += impTitleHeight + 2;
     
     improvements.forEach((improvement: string) => {
-      this.checkNewPage(8);
+      this.checkNewPage(10);
       const impText = `• ${improvement}`;
-      const impHeight = this.addText(impText, this.margins.left + 3, 8, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
-      this.currentY += impHeight + 1;
+      const impHeight = this.addText(impText, this.margins.left + 10, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 14);
+      this.currentY += impHeight + 2;
     });
     
-    this.currentY += 8;
+    this.currentY += 10;
   }
 
   renderCTA(section: ReportSection): void {
-    this.checkNewPage(25);
+    this.checkNewPage(30);
     
-    // Background rectangle
+    // Enhanced CTA background
     this.doc.setFillColor(...designTokens.colors['nomadic-lightBlue'].rgb);
-    this.doc.rect(this.margins.left, this.currentY - 2, this.contentWidth, 20, "F");
+    this.doc.setDrawColor(...designTokens.colors['nomadic-teal'].rgb);
+    this.doc.setLineWidth(0.5);
+    this.doc.roundedRect(this.margins.left, this.currentY, this.contentWidth, 25, 3, 3, "FD");
     
-    this.currentY += 5;
+    this.currentY += 6;
     
     // CTA title - centered
-    const titleHeight = this.addCenteredText(section.content.title, 12, designTokens.colors['nomadic-navy'].rgb);
-    this.currentY += titleHeight + 3;
+    const titleHeight = this.addCenteredText(section.content.title, 14, designTokens.colors['nomadic-navy'].rgb);
+    this.currentY += titleHeight + 4;
     
     // CTA subtitle - centered
-    const subtitleHeight = this.addCenteredText(section.content.subtitle, 9, designTokens.colors['nomadic-gray'].rgb);
-    this.currentY += subtitleHeight + 3;
+    const subtitleHeight = this.addCenteredText(section.content.subtitle, 10, designTokens.colors['nomadic-gray'].rgb);
+    this.currentY += subtitleHeight + 4;
+    
+    // Link button effect
+    this.doc.setFillColor(...designTokens.colors['nomadic-teal'].rgb);
+    this.doc.roundedRect(this.pageWidth/2 - 30, this.currentY, 60, 8, 2, 2, "F");
+    this.doc.setFontSize(10);
+    this.doc.setTextColor(255, 255, 255);
+    this.doc.text("Schedule Consultation", this.pageWidth/2, this.currentY + 5, { align: "center" });
+    
+    this.currentY += 12;
     
     // Link - centered
     const linkHeight = this.addCenteredText(section.content.link, 9, designTokens.colors['nomadic-teal'].rgb);
-    this.currentY += linkHeight + 8;
+    this.currentY += linkHeight + 10;
   }
 
   renderFooter(section: ReportSection): void {
     // Add footer at bottom of page
     const footerY = this.pageHeight - this.margins.bottom + 5;
-    this.doc.setFontSize(7);
+    this.doc.setFontSize(8);
     this.doc.setTextColor(...designTokens.colors['nomadic-taupe'].rgb);
     this.doc.text(`© ${section.content.year} ${section.content.companyName}. All rights reserved.`, this.pageWidth / 2, footerY, { align: "center" });
   }
 
-  private renderDots(score: number): void {
-    const totalDots = 5;
-    const filledDots = Math.round((score / 100) * totalDots);
-    const dotSpacing = 8;
-    const dotRadius = 2;
+  private renderEnhancedProgressBar(score: number, width: number = 80): void {
+    const barHeight = 6;
     
-    for (let i = 0; i < totalDots; i++) {
-      const dotX = this.margins.left + (i * dotSpacing);
-      const color = i < filledDots ? designTokens.colors['nomadic-teal'].rgb : designTokens.colors['nomadic-taupe'].rgb;
-      this.doc.setFillColor(...color);
-      this.doc.circle(dotX, this.currentY + 2, dotRadius, "F");
-    }
-  }
-
-  private renderProgressBar(score: number, width: number = 100): void {
-    const barHeight = 4;
-    
-    // Background bar
+    // Background bar with border
     this.doc.setFillColor(...designTokens.colors['nomadic-beige'].rgb);
-    this.doc.rect(this.margins.left, this.currentY, width, barHeight, "F");
+    this.doc.setDrawColor(...designTokens.colors['nomadic-taupe'].rgb);
+    this.doc.setLineWidth(0.2);
+    this.doc.roundedRect(this.margins.left + 8, this.currentY, width, barHeight, 1, 1, "FD");
     
     // Progress fill
     const progressWidth = (score / 100) * width;
     this.doc.setFillColor(...designTokens.colors['nomadic-teal'].rgb);
-    this.doc.rect(this.margins.left, this.currentY, progressWidth, barHeight, "F");
+    this.doc.roundedRect(this.margins.left + 8, this.currentY, progressWidth, barHeight, 1, 1, "F");
+    
+    // Add dots visualization
+    this.currentY += 8;
+    this.renderEnhancedDots(score);
+  }
+
+  private renderEnhancedDots(score: number): void {
+    const totalDots = 5;
+    const filledDots = Math.round((score / 100) * totalDots);
+    const dotSpacing = 10;
+    const dotRadius = 2.5;
+    
+    for (let i = 0; i < totalDots; i++) {
+      const dotX = this.margins.left + 8 + (i * dotSpacing);
+      const color = i < filledDots ? designTokens.colors['nomadic-teal'].rgb : designTokens.colors['nomadic-taupe'].rgb;
+      
+      // Add border to dots
+      this.doc.setDrawColor(...designTokens.colors['nomadic-gray'].rgb);
+      this.doc.setLineWidth(0.2);
+      this.doc.setFillColor(...color);
+      this.doc.circle(dotX, this.currentY, dotRadius, "FD");
+    }
   }
 
   protected combineRenderedSections(): void {
