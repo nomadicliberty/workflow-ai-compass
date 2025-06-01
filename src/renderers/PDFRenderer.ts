@@ -88,35 +88,43 @@ export class PDFRenderer extends BaseRenderer {
   }
 
   renderSummary(section: ReportSection): void {
-  // Calculate actual content height before rendering
-  const textLines = this.doc.splitTextToSize(section.content.text, this.contentWidth - 6);
-  const estimatedHeight = Math.max(40, textLines.length * 4 + 25); // Better height calculation
-  
-  this.checkNewPage(estimatedHeight);
-  
-  // Add card background with calculated height
-  this.addCardBackground(this.contentWidth, estimatedHeight);
-  this.currentY += 3;
-  
   if (section.content.isAI) {
-    // Sparkles indicator (using ✨ as text)
-    this.doc.setFontSize(12);
-    this.doc.setTextColor(...designTokens.colors['nomadic-teal'].rgb);
+    // First render the small beige card with title and disclaimer
+    this.checkNewPage(35);
+    this.addCardBackground(this.contentWidth, 30); // Increased to 30mm
+    this.currentY += 3;
     
     // Section title
     const titleHeight = this.addText(section.title || 'AI Assessment', this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
     this.currentY += titleHeight + 4;
     
-    // Disclaimer
+    // Disclaimer in the card
     if (section.content.disclaimer) {
       const disclaimerHeight = this.addText(section.content.disclaimer, this.margins.left + 3, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
-      this.currentY += disclaimerHeight + 4;
+      this.currentY += disclaimerHeight + 8;
     }
+    
+    // Now render the AI content as regular text (outside the card)
+    this.checkNewPage(30);
+    const contentHeight = this.addText(section.content.text, this.margins.left, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth);
+    this.currentY += contentHeight + 15;
+    
   } else {
-    // Section title
+    // Original logic for non-AI summaries
+    const textLines = this.doc.splitTextToSize(section.content.text, this.contentWidth - 6);
+    const estimatedHeight = Math.max(40, textLines.length * 4 + 25);
+    
+    this.checkNewPage(estimatedHeight);
+    this.addCardBackground(this.contentWidth, estimatedHeight);
+    this.currentY += 3;
+    
     const titleHeight = this.addText(section.title || 'Assessment Summary', this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
     this.currentY += titleHeight + 4;
+    
+    const contentHeight = this.addText(section.content.text, this.margins.left + 3, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
+    this.currentY += contentHeight + 15;
   }
+}
   
   // Main content
   const contentHeight = this.addText(section.content.text, this.margins.left + 3, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
