@@ -158,16 +158,7 @@ export class ReactRenderer extends BaseRenderer {
     );
   }
 
-  renderFooter(section: ReportSection): React.ReactElement {
-    return (
-      <div key={section.id} className="mt-8 text-center">
-        <p className="text-xs text-nomadic-taupe mt-4">
-          © {section.content.year} {section.content.companyName}. All rights reserved.
-        </p>
-      </div>
-    );
-  }
-
+  
   protected combineRenderedSections(sections: any[]): React.ReactElement {
     // Filter out category sections for special handling
     const nonCategorySections = sections.filter(Boolean);

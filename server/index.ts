@@ -398,7 +398,15 @@ Please write a comprehensive, personalized report that:
 
 End with a paragraph explaining how Nomadic Liberty, the consultancy that provided this audit, can help implement these improvements with hands-on support tailored to their specific needs and comfort level.
 
-Frame this as an AI-generated analysis, not a personal communication. Use educational language like 'areas to explore' and 'you might consider' rather than prescriptive recommendations like 'we recommend' or 'you should implement'. Avoid listing specific software tool names. Keep the tone collaborative and helpful, not expert or authoritative. Do not include email formatting like subject lines, greetings, or signatures.
+
+CRITICAL FORMATTING REQUIREMENTS:
+- This is an analytical report, NOT a letter or email
+- Start directly with analysis content - no greetings like "Dear Business Owner" or "Hello"
+- End with the Nomadic Liberty paragraph - no sign-offs like "Best regards" or "Sincerely"
+- Use educational language like 'areas to explore' and 'you might consider' rather than prescriptive recommendations
+- Avoid listing specific software tool names
+- Keep the tone collaborative and helpful, not expert or authoritative
+- Present as a direct business analysis without any personal communication formatting
 `;
 }
 

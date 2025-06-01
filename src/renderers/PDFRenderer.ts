@@ -99,8 +99,6 @@ export class PDFRenderer extends BaseRenderer {
       // Sparkles indicator (using ✨ as text)
       this.doc.setFontSize(12);
       this.doc.setTextColor(...designTokens.colors['nomadic-teal'].rgb);
-      this.doc.text("✨ AI-Generated Insights", this.margins.left + 3, this.currentY + 4);
-      this.currentY += 8;
       
       // Section title
       const titleHeight = this.addText(section.title || 'AI Assessment', this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
@@ -261,12 +259,9 @@ export class PDFRenderer extends BaseRenderer {
     
     // Link text only (no button graphic)
     const linkHeight = this.addCenteredText(section.content.linkText, 10, designTokens.colors['nomadic-teal'].rgb);
-    this.currentY += linkHeight + 2;
+    this.currentY += linkHeight + 8;
     
-    // Link URL - centered
-    const urlHeight = this.addCenteredText(section.content.link, 8, designTokens.colors['nomadic-teal'].rgb);
-    this.currentY += urlHeight + 8;
-  }
+   }
 
   renderFooter(section: ReportSection): void {
     // Add footer at bottom of page
