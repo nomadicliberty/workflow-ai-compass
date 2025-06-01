@@ -88,40 +88,43 @@ export class PDFRenderer extends BaseRenderer {
   }
 
   renderSummary(section: ReportSection): void {
-    this.checkNewPage(35);
+  // Calculate actual content height before rendering
+  const textLines = this.doc.splitTextToSize(section.content.text, this.contentWidth - 6);
+  const estimatedHeight = Math.max(40, textLines.length * 4 + 25); // Better height calculation
+  
+  this.checkNewPage(estimatedHeight);
+  
+  // Add card background with calculated height
+  this.addCardBackground(this.contentWidth, estimatedHeight);
+  this.currentY += 3;
+  
+  if (section.content.isAI) {
+    // Sparkles indicator (using ✨ as text)
+    this.doc.setFontSize(12);
+    this.doc.setTextColor(...designTokens.colors['nomadic-teal'].rgb);
     
-    // Add card background
-    const estimatedHeight = 30;
-    this.addCardBackground(this.contentWidth, estimatedHeight);
-    this.currentY += 3;
+    // Section title
+    const titleHeight = this.addText(section.title || 'AI Assessment', this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
+    this.currentY += titleHeight + 4;
     
-    if (section.content.isAI) {
-      // Sparkles indicator (using ✨ as text)
-      this.doc.setFontSize(12);
-      this.doc.setTextColor(...designTokens.colors['nomadic-teal'].rgb);
-      
-      // Section title
-      const titleHeight = this.addText(section.title || 'AI Assessment', this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
-      this.currentY += titleHeight + 4;
-      
-      // Disclaimer
-      if (section.content.disclaimer) {
-        const disclaimerHeight = this.addText(section.content.disclaimer, this.margins.left + 3, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
-        this.currentY += disclaimerHeight + 4;
-      }
-    } else {
-      // Section title
-      const titleHeight = this.addText(section.title || 'Assessment Summary', this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
-      this.currentY += titleHeight + 4;
+    // Disclaimer
+    if (section.content.disclaimer) {
+      const disclaimerHeight = this.addText(section.content.disclaimer, this.margins.left + 3, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
+      this.currentY += disclaimerHeight + 4;
     }
-    
-    // Main content
-    const contentHeight = this.addText(section.content.text, this.margins.left + 3, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
-    this.currentY += contentHeight + 12;
+  } else {
+    // Section title
+    const titleHeight = this.addText(section.title || 'Assessment Summary', this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
+    this.currentY += titleHeight + 4;
   }
+  
+  // Main content
+  const contentHeight = this.addText(section.content.text, this.margins.left + 3, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
+  this.currentY += contentHeight + 15; // Increased from 12
+}
 
   renderMetrics(section: ReportSection): void {
-    this.checkNewPage(60);
+    this.checkNewPage(80);
     
     const { rating, score, timeSavings, recommendations, ratingDescription } = section.content;
     
@@ -329,9 +332,9 @@ export class PDFRenderer extends BaseRenderer {
         case 'category':
           this.renderCategory(section);
           break;
-        case 'cta':
-          this.renderCTA(section);
-          break;
+        //case 'cta':
+        //  this.renderCTA(section);
+        //  break;
         case 'footer':
           this.renderFooter(section);
           break;
