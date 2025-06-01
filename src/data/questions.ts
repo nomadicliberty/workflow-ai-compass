@@ -186,7 +186,7 @@ export const auditQuestions: AuditQuestion[] = [
   // Reporting Questions
   {
     id: 'reporting-1',
-    text: 'How do you track business metrics and KPIs?',
+    text: 'How do you track business metrics?',
     type: 'multiple-choice',
     category: 'reporting',
     options: [

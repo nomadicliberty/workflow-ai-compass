@@ -119,7 +119,7 @@ app.post('/api/generateAiSummary', (req: Request, res: Response) => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "gpt-4",
+          model: "gpt-4.1-mini",
           messages: [{ role: "user", content: prompt }],
           temperature: 0.7
         })
