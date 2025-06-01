@@ -123,7 +123,6 @@ export class PDFRenderer extends BaseRenderer {
     });
     
     this.currentY += 15; // Final spacing
-  }
       
     } else {
       // Non-AI summaries - original logic
