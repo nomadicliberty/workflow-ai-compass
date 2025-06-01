@@ -7,7 +7,6 @@ export class EmailRenderer extends BaseRenderer {
   renderHeader(section: ReportSection): string {
     return `
       <div class="header">
-        <div class="logo">${section.content.companyName}</div>
         <h1 style="margin: 0; font-size: 28px;">${section.content.title}</h1>
         <p style="margin: 10px 0 0 0; opacity: 0.9;">${section.content.subtitle}</p>
       </div>
@@ -19,8 +18,9 @@ export class EmailRenderer extends BaseRenderer {
       return `
         <div class="section">
           <div class="ai-section">
-            <div class="ai-badge">AI-POWERED INSIGHTS</div>
+            <div class="ai-indicator">✨ AI-Generated Insights</div>
             <h2 style="color: #1B365D; margin-top: 0;">${section.title}</h2>
+            ${section.content.disclaimer ? `<p style="color: #4D4D4D; font-style: italic; font-size: 14px;">${section.content.disclaimer}</p>` : ''}
             <p style="color: #4D4D4D; line-height: 1.6;">${this.escapeHtml(section.content.text).replace(/\n/g, '<br/>')}</p>
           </div>
         </div>
@@ -53,6 +53,8 @@ export class EmailRenderer extends BaseRenderer {
             <div class="progress-fill" style="width: ${score}%"></div>
           </div>
           <p style="color: #4D4D4D;">Score: <span class="brand-highlight">${score}/100</span></p>
+          
+          ${ratingDescription ? `<p style="color: #4D4D4D;">${ratingDescription}</p>` : ''}
           
           <p style="color: #4D4D4D;">With targeted improvements, you could save approximately <span class="time-savings">${timeSavings}</span>.</p>
         </div>
@@ -98,7 +100,8 @@ export class EmailRenderer extends BaseRenderer {
       <div class="section" style="text-align: center;">
         <div class="section-bg">
           <p style="color: #1B365D; font-size: 18px; font-weight: bold;">${section.content.title}</p>
-          <a href="${section.content.link}" class="button">${section.content.linkText}</a>
+          ${section.content.subtitle ? `<p style="color: #4D4D4D; margin-bottom: 20px;">${section.content.subtitle}</p>` : ''}
+          <a href="${section.content.link}" class="button" style="background-color: #00A8A8; color: #FFFFFF;">${section.content.linkText}</a>
           <p style="color: #A8998C; font-size: 14px; margin-top: 10px;">No commitment required • Personalized guidance included</p>
         </div>
       </div>
@@ -119,7 +122,6 @@ export class EmailRenderer extends BaseRenderer {
   }
 
   protected combineRenderedSections(sections: string[]): string {
-    // Simply render sections in order - no custom category logic
     return `
       <!DOCTYPE html>
       <html>
@@ -141,7 +143,6 @@ export class EmailRenderer extends BaseRenderer {
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #4D4D4D; margin: 0; padding: 0; background-color: #FFFFFF; }
         .container { max-width: 600px; margin: 0 auto; padding: 0; background-color: #ffffff; }
         .header { background-color: #1B365D; color: #FFFFFF; padding: 30px 20px; text-align: center; }
-        .logo { max-width: 200px; margin-bottom: 15px; color: #FFFFFF; font-size: 24px; font-weight: bold; }
         .section { margin-bottom: 30px; padding: 0 20px; }
         .category { margin-bottom: 25px; border-left: 4px solid #00A8A8; padding-left: 15px; background-color: #F5F1EB; padding: 15px; border-radius: 8px; }
         .rating { display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; margin: 5px 0; }
@@ -158,7 +159,7 @@ export class EmailRenderer extends BaseRenderer {
         .footer { background-color: #1B365D; color: #FFFFFF; padding: 25px; text-align: center; font-size: 12px; }
         .button { background-color: #00A8A8; color: #FFFFFF; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 15px 0; }
         .ai-section { background-color: #E4EEF8; border: 2px solid #00A8A8; border-radius: 10px; padding: 20px; margin: 20px 0; }
-        .ai-badge { background-color: #00A8A8; color: #FFFFFF; padding: 5px 12px; border-radius: 15px; font-size: 12px; font-weight: bold; display: inline-block; margin-bottom: 10px; }
+        .ai-indicator { background-color: #00A8A8; color: #FFFFFF; padding: 5px 12px; border-radius: 15px; font-size: 12px; font-weight: bold; display: inline-block; margin-bottom: 10px; }
         .brand-highlight { color: #00A8A8; font-weight: bold; }
         .section-bg { background-color: #F5F1EB; padding: 20px; border-radius: 8px; margin: 15px 0; }
       </style>

@@ -41,7 +41,7 @@ export class PDFRenderer extends BaseRenderer {
     
     if (maxWidth) {
       const lines = this.doc.splitTextToSize(text, maxWidth);
-      const lineHeight = fontSize * 0.4; // Improved line height
+      const lineHeight = fontSize * 0.4;
       
       lines.forEach((line: string, index: number) => {
         if (index > 0) {
@@ -78,12 +78,8 @@ export class PDFRenderer extends BaseRenderer {
     
     this.currentY = 15;
     
-    // Company name - centered in white
-    const titleHeight = this.addCenteredText(section.content.companyName, 14, designTokens.colors['nomadic-white'].rgb);
-    this.currentY += titleHeight + 4;
-    
     // Main title - centered in white
-    const mainTitleHeight = this.addCenteredText(section.content.title, 20, designTokens.colors['nomadic-white'].rgb);
+    const mainTitleHeight = this.addCenteredText(section.content.title, 18, designTokens.colors['nomadic-white'].rgb);
     this.currentY += mainTitleHeight + 3;
     
     // Subtitle - centered in white
@@ -100,16 +96,14 @@ export class PDFRenderer extends BaseRenderer {
     this.currentY += 3;
     
     if (section.content.isAI) {
-      // AI badge
-      this.doc.setFillColor(...designTokens.colors['nomadic-teal'].rgb);
-      this.doc.roundedRect(this.margins.left + 3, this.currentY, 30, 7, 1, 1, "F");
-      this.doc.setFontSize(9);
-      this.doc.setTextColor(255, 255, 255);
-      this.doc.text("AI-POWERED INSIGHTS", this.margins.left + 5, this.currentY + 5);
-      this.currentY += 10;
+      // Sparkles indicator (using ✨ as text)
+      this.doc.setFontSize(12);
+      this.doc.setTextColor(...designTokens.colors['nomadic-teal'].rgb);
+      this.doc.text("✨ AI-Generated Insights", this.margins.left + 3, this.currentY + 4);
+      this.currentY += 8;
       
       // Section title
-      const titleHeight = this.addText(section.title || 'AI Assessment', this.margins.left + 3, 16, designTokens.colors['nomadic-navy'].rgb);
+      const titleHeight = this.addText(section.title || 'AI Assessment', this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
       this.currentY += titleHeight + 4;
       
       // Disclaimer
@@ -119,7 +113,7 @@ export class PDFRenderer extends BaseRenderer {
       }
     } else {
       // Section title
-      const titleHeight = this.addText(section.title || 'Assessment Summary', this.margins.left + 3, 16, designTokens.colors['nomadic-navy'].rgb);
+      const titleHeight = this.addText(section.title || 'Assessment Summary', this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
       this.currentY += titleHeight + 4;
     }
     
@@ -131,7 +125,7 @@ export class PDFRenderer extends BaseRenderer {
   renderMetrics(section: ReportSection): void {
     this.checkNewPage(60);
     
-    const { rating, score, timeSavings, recommendations } = section.content;
+    const { rating, score, timeSavings, recommendations, ratingDescription } = section.content;
     
     // Add card background
     this.addCardBackground(this.contentWidth, 55);
@@ -140,7 +134,7 @@ export class PDFRenderer extends BaseRenderer {
     // Section title with navy background
     this.doc.setFillColor(...designTokens.colors['nomadic-navy'].rgb);
     this.doc.rect(this.margins.left, this.currentY, this.contentWidth, 8, "F");
-    this.doc.setFontSize(16);
+    this.doc.setFontSize(14);
     this.doc.setTextColor(255, 255, 255);
     this.doc.text(section.title, this.margins.left + 3, this.currentY + 6);
     this.currentY += 12;
@@ -160,7 +154,13 @@ export class PDFRenderer extends BaseRenderer {
     
     // Enhanced progress bar
     this.renderEnhancedProgressBar(score);
-    this.currentY += 10;
+    this.currentY += 15; // Increased spacing to prevent overlap
+    
+    // Rating description if available
+    if (ratingDescription) {
+      const descHeight = this.addText(ratingDescription, this.margins.left + 3, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 6);
+      this.currentY += descHeight + 4;
+    }
     
     // Time savings with highlight box
     this.doc.setFillColor(...designTokens.colors['nomadic-lightBlue'].rgb);
@@ -169,24 +169,21 @@ export class PDFRenderer extends BaseRenderer {
     this.doc.setFontSize(11);
     this.doc.setTextColor(...designTokens.colors['nomadic-navy'].rgb);
     this.doc.text("Estimated Time Savings", this.margins.left + 5, this.currentY + 4);
-    this.doc.setFontSize(14);
+    this.doc.setFontSize(12);
     this.doc.setTextColor(...designTokens.colors['nomadic-teal'].rgb);
     this.doc.text(timeSavings, this.margins.left + 5, this.currentY + 8);
     this.currentY += 15;
     
     // Top recommendations
     this.checkNewPage(25);
-    const recTitleHeight = this.addText("Top Recommendations", this.margins.left + 3, 14, designTokens.colors['nomadic-navy'].rgb);
+    const recTitleHeight = this.addText("Top Recommendations", this.margins.left + 3, 12, designTokens.colors['nomadic-navy'].rgb);
     this.currentY += recTitleHeight + 4;
     
     recommendations.forEach((rec: string, idx: number) => {
-      this.checkNewPage(12);
-      // Add bullet point with teal color
-      this.doc.setFillColor(...designTokens.colors['nomadic-teal'].rgb);
-      this.doc.circle(this.margins.left + 6, this.currentY + 2, 1, "F");
-      
-      const recText = `${rec}`;
-      const recHeight = this.addText(recText, this.margins.left + 10, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 10);
+      this.checkNewPage(10);
+      // Add numbered bullet point
+      const bulletText = `${idx + 1}. ${rec}`;
+      const recHeight = this.addText(bulletText, this.margins.left + 6, 10, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 10);
       this.currentY += recHeight + 3;
     });
     
@@ -207,7 +204,7 @@ export class PDFRenderer extends BaseRenderer {
     this.currentY += 3;
     
     // Category title
-    const titleHeight = this.addText(categoryName, this.margins.left + 8, 14, designTokens.colors['nomadic-navy'].rgb);
+    const titleHeight = this.addText(categoryName, this.margins.left + 8, 12, designTokens.colors['nomadic-navy'].rgb);
     this.currentY += titleHeight + 4;
     
     // Rating and score in one line
@@ -216,7 +213,7 @@ export class PDFRenderer extends BaseRenderer {
     
     // Enhanced progress bar (smaller for categories)
     this.renderEnhancedProgressBar(score, 60);
-    this.currentY += 8;
+    this.currentY += 12; // Increased spacing
     
     // Time savings
     const timeSavingsHeight = this.addText(`Time Savings: ${timeSavings}`, this.margins.left + 8, 10, designTokens.colors['nomadic-teal'].rgb);
@@ -232,7 +229,7 @@ export class PDFRenderer extends BaseRenderer {
     this.currentY += impTitleHeight + 2;
     
     improvements.forEach((improvement: string) => {
-      this.checkNewPage(10);
+      this.checkNewPage(8);
       const impText = `• ${improvement}`;
       const impHeight = this.addText(impText, this.margins.left + 10, 9, designTokens.colors['nomadic-gray'].rgb, this.contentWidth - 14);
       this.currentY += impHeight + 2;
@@ -242,36 +239,33 @@ export class PDFRenderer extends BaseRenderer {
   }
 
   renderCTA(section: ReportSection): void {
-    this.checkNewPage(30);
+    this.checkNewPage(25);
     
     // Enhanced CTA background
     this.doc.setFillColor(...designTokens.colors['nomadic-lightBlue'].rgb);
     this.doc.setDrawColor(...designTokens.colors['nomadic-teal'].rgb);
     this.doc.setLineWidth(0.5);
-    this.doc.roundedRect(this.margins.left, this.currentY, this.contentWidth, 25, 3, 3, "FD");
+    this.doc.roundedRect(this.margins.left, this.currentY, this.contentWidth, 20, 3, 3, "FD");
     
     this.currentY += 6;
     
     // CTA title - centered
-    const titleHeight = this.addCenteredText(section.content.title, 14, designTokens.colors['nomadic-navy'].rgb);
-    this.currentY += titleHeight + 4;
+    const titleHeight = this.addCenteredText(section.content.title, 12, designTokens.colors['nomadic-navy'].rgb);
+    this.currentY += titleHeight + 3;
     
-    // CTA subtitle - centered
-    const subtitleHeight = this.addCenteredText(section.content.subtitle, 10, designTokens.colors['nomadic-gray'].rgb);
-    this.currentY += subtitleHeight + 4;
+    // CTA subtitle - centered (if exists)
+    if (section.content.subtitle) {
+      const subtitleHeight = this.addCenteredText(section.content.subtitle, 10, designTokens.colors['nomadic-gray'].rgb);
+      this.currentY += subtitleHeight + 3;
+    }
     
-    // Link button effect
-    this.doc.setFillColor(...designTokens.colors['nomadic-teal'].rgb);
-    this.doc.roundedRect(this.pageWidth/2 - 30, this.currentY, 60, 8, 2, 2, "F");
-    this.doc.setFontSize(10);
-    this.doc.setTextColor(255, 255, 255);
-    this.doc.text("Schedule Consultation", this.pageWidth/2, this.currentY + 5, { align: "center" });
+    // Link text only (no button graphic)
+    const linkHeight = this.addCenteredText(section.content.linkText, 10, designTokens.colors['nomadic-teal'].rgb);
+    this.currentY += linkHeight + 2;
     
-    this.currentY += 12;
-    
-    // Link - centered
-    const linkHeight = this.addCenteredText(section.content.link, 9, designTokens.colors['nomadic-teal'].rgb);
-    this.currentY += linkHeight + 10;
+    // Link URL - centered
+    const urlHeight = this.addCenteredText(section.content.link, 8, designTokens.colors['nomadic-teal'].rgb);
+    this.currentY += urlHeight + 8;
   }
 
   renderFooter(section: ReportSection): void {
@@ -296,16 +290,16 @@ export class PDFRenderer extends BaseRenderer {
     this.doc.setFillColor(...designTokens.colors['nomadic-teal'].rgb);
     this.doc.roundedRect(this.margins.left + 8, this.currentY, progressWidth, barHeight, 1, 1, "F");
     
-    // Add dots visualization
-    this.currentY += 8;
+    // Move down for dots with proper spacing
+    this.currentY += barHeight + 4;
     this.renderEnhancedDots(score);
   }
 
   private renderEnhancedDots(score: number): void {
     const totalDots = 5;
     const filledDots = Math.round((score / 100) * totalDots);
-    const dotSpacing = 10;
-    const dotRadius = 2.5;
+    const dotSpacing = 8;
+    const dotRadius = 2;
     
     for (let i = 0; i < totalDots; i++) {
       const dotX = this.margins.left + 8 + (i * dotSpacing);
@@ -313,7 +307,7 @@ export class PDFRenderer extends BaseRenderer {
       
       // Add border to dots
       this.doc.setDrawColor(...designTokens.colors['nomadic-gray'].rgb);
-      this.doc.setLineWidth(0.2);
+      this.doc.setLineWidth(0.1);
       this.doc.setFillColor(...color);
       this.doc.circle(dotX, this.currentY, dotRadius, "FD");
     }

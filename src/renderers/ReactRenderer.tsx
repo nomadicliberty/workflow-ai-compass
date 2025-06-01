@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { CircleDot, Sparkles, RotateCcw } from 'lucide-react';
+import { CircleDot, Sparkles } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export class ReactRenderer extends BaseRenderer {
@@ -32,9 +32,11 @@ export class ReactRenderer extends BaseRenderer {
                 {section.title}
               </h2>
             </div>
-            <p className="text-sm text-nomadic-gray mt-2 italic">
-              {section.content.disclaimer}
-            </p>
+            {section.content.disclaimer && (
+              <p className="text-sm text-nomadic-gray mt-2 italic">
+                {section.content.disclaimer}
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             <div className="prose prose-gray max-w-none">
@@ -105,7 +107,9 @@ export class ReactRenderer extends BaseRenderer {
             </div>
           </div>
           
-          <p className="text-nomadic-gray mb-4">{ratingDescription}</p>
+          {ratingDescription && (
+            <p className="text-nomadic-gray mb-4">{ratingDescription}</p>
+          )}
           
           <div className="bg-nomadic-lightBlue border-2 border-nomadic-teal rounded-md p-4 mb-6">
             <h3 className="text-lg font-semibold text-nomadic-navy mb-2">Estimated Time Savings</h3>
@@ -142,7 +146,9 @@ export class ReactRenderer extends BaseRenderer {
     return (
       <div key={section.id} className="text-center mb-8 p-8 bg-nomadic-lightBlue border-2 border-nomadic-teal rounded-lg">
         <h2 className="text-2xl font-bold mb-4 text-nomadic-navy">{section.content.title}</h2>
-        <p className="text-nomadic-gray mb-6">{section.content.subtitle}</p>
+        {section.content.subtitle && (
+          <p className="text-nomadic-gray mb-6">{section.content.subtitle}</p>
+        )}
         <Button asChild className="bg-nomadic-teal hover:bg-nomadic-navy text-white px-8 py-3 text-lg">
           <a href={section.content.link} target="_blank" rel="noopener noreferrer">
             {section.content.linkText}
