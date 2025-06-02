@@ -1,7 +1,7 @@
 
 export const API_ENDPOINTS = {
   SEND_REPORT: 'https://workflow-ai-audit.onrender.com/api/send-report',
-  AI_REPORT: 'https://workflow-ai-audit.onrender.com/api/ai-report'
+  AI_REPORT: 'https://workflow-ai-audit.onrender.com/api/generateAiSummary'
 };
 
 export const API_CONFIG = {

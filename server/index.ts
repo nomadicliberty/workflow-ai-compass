@@ -8,8 +8,21 @@ import aiRoutes from './routes/ai';
 dotenv.config();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+
+// Configure CORS properly
+app.use(cors({
+  origin: ['http://localhost:5173', 'https://workflow-ai-audit.lovable.app', 'https://audit.nomadicliberty.com'],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
+app.use(express.json({ limit: '10mb' }));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 // Mount routes
 app.use('/api', emailRoutes);

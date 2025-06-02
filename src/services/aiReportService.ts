@@ -49,8 +49,8 @@ export const generateAIReport = async (
     };
 
     console.log('🌐 Making API call to:', API_ENDPOINTS.AI_REPORT);
+    console.log('📊 Request data:', JSON.stringify(requestData, null, 2));
     
-    // Use centralized timeout configuration
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000);
     
@@ -65,13 +65,17 @@ export const generateAIReport = async (
     console.log('📡 API Response status:', response.status);
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error("❌ AI report generation error:", errorData);
-      throw new Error('Failed to generate AI report');
+      const errorText = await response.text();
+      console.error("❌ AI report generation error:", {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      });
+      throw new Error(`Failed to generate AI report: ${response.status} ${response.statusText}`);
     }
 
     const aiResponse: AIReportResponse = await response.json();
-    console.log('✅ AI summary generated successfully, length:', aiResponse.summary.length);
+    console.log('✅ AI summary generated successfully, length:', aiResponse.summary?.length || 0);
     
     return aiResponse.summary;
   } catch (error) {

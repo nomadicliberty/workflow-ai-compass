@@ -9,9 +9,11 @@ const router = express.Router();
 
 router.post('/send-report', async (req: Request, res: Response) => {
   try {
+    console.log('📧 Email send request received');
     const { userEmail, userName, report, painPoint, techReadiness } = req.body;
 
     if (!userEmail || !report) {
+      console.error('❌ Missing required fields for email sending');
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -21,9 +23,11 @@ router.post('/send-report', async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'Email service configuration error' });
     }
 
+    console.log('📄 Generating email HTML templates...');
     const customerEmailHtml = generateReportHtml(report, painPoint, techReadiness);
     const adminEmailHtml = generateAdminReportHtml(userEmail, userName, report, painPoint, techReadiness);
 
+    console.log('📤 Sending customer email...');
     // Send customer email
     const customerResponse = await fetch(EMAIL_CONFIG.RESEND_API_URL, {
       method: 'POST',
@@ -41,12 +45,15 @@ router.post('/send-report', async (req: Request, res: Response) => {
 
     if (!customerResponse.ok) {
       const error = await customerResponse.json();
-      console.error('❌ Customer email error:', error);
+      console.error('❌ Customer email sending failed:', error);
       return res.status(500).json({ error: 'Failed to send customer email' });
     }
 
+    console.log('✅ Customer email sent successfully');
+
     // Send admin email (don't fail if this fails)
     try {
+      console.log('📤 Sending admin notification email...');
       await fetch(EMAIL_CONFIG.RESEND_API_URL, {
         method: 'POST',
         headers: {
@@ -60,11 +67,11 @@ router.post('/send-report', async (req: Request, res: Response) => {
           html: adminEmailHtml,
         }),
       });
+      console.log('✅ Admin email sent successfully');
     } catch (adminError) {
       console.error('❌ Admin email error (non-fatal):', adminError);
     }
 
-    const result = await customerResponse.json();
     res.status(200).json({ success: true });
   } catch (err) {
     console.error('❌ Server error sending email:', err);
