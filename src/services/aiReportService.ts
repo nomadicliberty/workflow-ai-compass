@@ -1,7 +1,4 @@
 
-import { API_ENDPOINTS, API_CONFIG } from '../constants/api';
-import { getCategoryName } from '../constants/categories';
-
 interface CategoryScore {
   score: number;
   level: string;
@@ -38,6 +35,7 @@ export const generateAIReport = async (
 ): Promise<string> => {
   try {
     console.log('🤖 Sending assessment data to AI backend for report generation...');
+    console.log('Data being sent:', { scores, keyChallenge, techReadiness, businessType, teamSize });
     
     const requestData: AIReportRequest = {
       scores,
@@ -48,15 +46,17 @@ export const generateAIReport = async (
       teamSize
     };
 
-    console.log('🌐 Making API call to:', API_ENDPOINTS.AI_REPORT);
-    console.log('📊 Request data:', JSON.stringify(requestData, null, 2));
+    console.log('🌐 Making API call to:', 'https://workflow-ai-audit.onrender.com/api/generateAiSummary');
     
+    // Increased timeout to 60 seconds for GPT-4 API calls
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000);
     
-    const response = await fetch(API_ENDPOINTS.AI_REPORT, {
+    const response = await fetch('https://workflow-ai-audit.onrender.com/api/generateAiSummary', {
       method: 'POST',
-      headers: API_CONFIG.DEFAULT_HEADERS,
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(requestData),
       signal: controller.signal,
     });
@@ -65,17 +65,14 @@ export const generateAIReport = async (
     console.log('📡 API Response status:', response.status);
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("❌ AI report generation error:", {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText
-      });
-      throw new Error(`Failed to generate AI report: ${response.status} ${response.statusText}`);
+      const errorData = await response.json();
+      console.error("❌ AI report generation error:", errorData);
+      throw new Error('Failed to generate AI report');
     }
 
     const aiResponse: AIReportResponse = await response.json();
-    console.log('✅ AI summary generated successfully, length:', aiResponse.summary?.length || 0);
+    console.log('✅ AI summary generated successfully, length:', aiResponse.summary.length);
+    console.log('Preview:', aiResponse.summary.substring(0, 200) + '...');
     
     return aiResponse.summary;
   } catch (error) {
@@ -95,7 +92,7 @@ export const transformReportForAI = (report: any): ReportScores => {
   const byCategory: Record<string, CategoryScore> = {};
   
   report.categories.forEach((category: any) => {
-    const categoryName = getCategoryName(category.category);
+    const categoryName = getCategoryDisplayName(category.category);
     byCategory[categoryName] = {
       score: category.score,
       level: category.rating
@@ -104,7 +101,21 @@ export const transformReportForAI = (report: any): ReportScores => {
 
   return {
     overall: report.overallScore,
-    totalTimeSavings: report.totalTimeSavings.split(' ')[0],
+    totalTimeSavings: report.totalTimeSavings.split(' ')[0], // Extract just the number
     byCategory
   };
+};
+
+// Helper function to get display names for categories
+const getCategoryDisplayName = (category: string): string => {
+  const names: Record<string, string> = {
+    'task-management': 'Task Management',
+    'customer-communication': 'Customer Communication',
+    'data-entry': 'Data Entry',
+    'scheduling': 'Scheduling',
+    'reporting': 'Reporting',
+    'general': 'General Business Operations'
+  };
+  
+  return names[category] || category;
 };

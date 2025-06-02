@@ -1,6 +1,18 @@
+
 import { AuditReport } from '../types/audit';
 import { FormattedReport, ReportSection, CategoryData } from '../types/reportData';
-import { getCategoryName } from '../constants/categories';
+
+const getCategoryName = (category: string): string => {
+  const names: Record<string, string> = {
+    'task-management': 'Task Management',
+    'customer-communication': 'Customer Communication',
+    'data-entry': 'Data Entry',
+    'scheduling': 'Scheduling',
+    'reporting': 'Reporting',
+    'general': 'General Business Operations'
+  };
+  return names[category] || category;
+};
 
 const generatePersonalizedIntro = (painPoint?: string, techReadiness?: string): string => {
   let personalizedIntro = "";
@@ -33,6 +45,7 @@ export const buildFormattedReport = (
 ): FormattedReport => {
   const sections: ReportSection[] = [];
 
+  // Header section
   sections.push({
     id: 'header',
     type: 'header',
@@ -43,6 +56,7 @@ export const buildFormattedReport = (
     }
   });
 
+  // AI Summary or Personalized Summary section
   if (auditReport.aiGeneratedSummary && auditReport.aiGeneratedSummary.trim().length > 0) {
     sections.push({
       id: 'ai-summary',
@@ -67,6 +81,7 @@ export const buildFormattedReport = (
     });
   }
 
+  // Overall metrics section
   sections.push({
     id: 'overall-metrics',
     type: 'metrics',
@@ -80,6 +95,7 @@ export const buildFormattedReport = (
     }
   });
 
+  // Category sections
   auditReport.categories.forEach((category, index) => {
     const categoryData: CategoryData = {
       category: category.category,
@@ -99,6 +115,7 @@ export const buildFormattedReport = (
     });
   });
 
+  // Call to action section
   sections.push({
     id: 'cta',
     type: 'cta',
@@ -110,6 +127,7 @@ export const buildFormattedReport = (
     }
   });
 
+  // Footer section
   sections.push({
     id: 'footer',
     type: 'footer',

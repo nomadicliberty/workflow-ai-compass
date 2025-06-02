@@ -85,7 +85,7 @@ export const generateAuditReport = (answers: AuditAnswer[]): AuditReport => {
   // Calculate total time savings across all categories
   const totalHours = categoryAssessments.reduce((sum, assessment) => {
     const hours = parseFloat(assessment.timeSavings.split(' ')[0]);
-    return sum + (isNaN(hours) ? 0 : hours);
+    return sum + hours;
   }, 0);
   const totalTimeSavings = `${Math.round(totalHours * 10) / 10} hours/week`;
   
@@ -96,8 +96,7 @@ export const generateAuditReport = (answers: AuditAnswer[]): AuditReport => {
   // Take 1 improvement from each of the 3 lowest-scored categories
   const topRecommendations = sortedAssessments
     .slice(0, 3)
-    .map(assessment => assessment.improvements[0])
-    .filter(Boolean); // Remove any undefined recommendations
+    .map(assessment => assessment.improvements[0]);
   
   return {
     categories: categoryAssessments,
