@@ -1,3 +1,4 @@
+
 export type RatingLevel = 'Manual' | 'Partially Automated' | 'Fully Automated';
 
 export interface AuditQuestion {
@@ -28,7 +29,7 @@ export interface CategoryAssessment {
   score: number;
   tools: string[];
   improvements: string[];
-  timeSavings: string; // Added time savings estimate
+  timeSavings: string;
 }
 
 export interface AuditReport {
@@ -36,18 +37,9 @@ export interface AuditReport {
   overallRating: RatingLevel;
   overallScore: number;
   topRecommendations: string[];
-  totalTimeSavings: string; // Added total time savings estimate
-  aiGeneratedSummary?: string; // New field for AI-generated content
+  totalTimeSavings: string;
+  aiGeneratedSummary?: string;
 }
-
-export const categoryLabels: Record<WorkflowCategory, string> = {
-  'task-management': 'Task Management',
-  'customer-communication': 'Customer Communication',
-  'data-entry': 'Data Entry',
-  'scheduling': 'Scheduling',
-  'reporting': 'Reporting',
-  'general': 'General Business Operations'
-};
 
 export const ratingDescriptions: Record<RatingLevel, string> = {
   'Manual': 'Processes are mostly done by hand with minimal technology assistance',

@@ -1,5 +1,6 @@
 
 import { AuditReport } from "../types/audit";
+import { API_ENDPOINTS, API_CONFIG } from "../constants/api";
 
 interface SendReportEmailParams {
   userEmail: string;
@@ -9,9 +10,6 @@ interface SendReportEmailParams {
   techReadiness?: string;
 }
 
-/**
- * Sends an email with the audit report results via API endpoint
- */
 export const sendReportEmail = async ({ 
   userEmail, 
   userName,
@@ -22,13 +20,11 @@ export const sendReportEmail = async ({
   try {
     console.log(`Sending report email to ${userEmail} via API endpoint`);
     
-    // Include AI-generated summary in the email data
     const emailData = {
       userEmail,
       userName,
       report: {
         ...report,
-        // Ensure AI summary is included if available
         aiGeneratedSummary: report.aiGeneratedSummary
       },
       painPoint,
@@ -37,18 +33,16 @@ export const sendReportEmail = async ({
     
     console.log('Email payload size:', JSON.stringify(emailData).length, 'characters');
     
-    // Trim AI summary if it's too large (over 5000 characters)
-    if (emailData.report.aiGeneratedSummary && emailData.report.aiGeneratedSummary.length > 5000) {
+    // Trim AI summary if it's too large using centralized constants
+    if (emailData.report.aiGeneratedSummary && emailData.report.aiGeneratedSummary.length > API_CONFIG.MAX_AI_SUMMARY_LENGTH) {
       console.log('Trimming AI summary for email - original length:', emailData.report.aiGeneratedSummary.length);
-      emailData.report.aiGeneratedSummary = emailData.report.aiGeneratedSummary.substring(0, 4900) + '...';
+      emailData.report.aiGeneratedSummary = emailData.report.aiGeneratedSummary.substring(0, API_CONFIG.TRIMMED_AI_SUMMARY_LENGTH) + '...';
     }
     
-    // Make API call to the correct backend endpoint
-    const response = await fetch('https://workflow-ai-audit.onrender.com/api/send-report', {
+    // Use centralized API endpoint
+    const response = await fetch(API_ENDPOINTS.SEND_REPORT, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: API_CONFIG.DEFAULT_HEADERS,
       body: JSON.stringify(emailData),
     });
 
