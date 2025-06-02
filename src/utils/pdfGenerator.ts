@@ -9,8 +9,6 @@ export const generatePDF = async (
   techReadiness?: string
 ): Promise<void> => {
   try {
-    console.log('🔄 Generating PDF with new renderer...');
-    
     // Build formatted report
     const formattedReport = buildFormattedReport(
       report,
@@ -27,10 +25,8 @@ export const generatePDF = async (
     // Save the PDF
     doc.save("nomadic_liberty_workflow_audit_report.pdf");
     
-    console.log('✅ PDF generated successfully with new renderer');
-    
   } catch (error) {
-    console.error("❌ Error generating PDF:", error);
-    throw error;
+    console.error("Error generating PDF:", error);
+    throw new Error("Failed to generate PDF report");
   }
 };

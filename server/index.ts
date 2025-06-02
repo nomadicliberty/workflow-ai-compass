@@ -10,148 +10,163 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.post('/api/send-report', (req: Request, res: Response) => {
-  (async () => {
+// Centralized configuration
+const EMAIL_CONFIG = {
+  FROM_CUSTOMER: 'Jason Henry <jason@nomadicliberty.com>',
+  FROM_ADMIN: 'Workflow Audit <jason@nomadicliberty.com>',
+  TO_ADMIN: 'jason@nomadicliberty.com',
+  RESEND_API_URL: 'https://api.resend.com/emails',
+  OPENAI_API_URL: 'https://api.openai.com/v1/chat/completions',
+  OPENAI_MODEL: 'gpt-4o-mini'
+};
+
+const RATING_CLASSES = {
+  'Manual': 'manual',
+  'Partially Automated': 'partial', 
+  'Fully Automated': 'automated'
+} as const;
+
+const CATEGORY_NAMES = {
+  'task-management': 'Task Management',
+  'customer-communication': 'Customer Communication',
+  'data-entry': 'Data Entry',
+  'scheduling': 'Scheduling',
+  'reporting': 'Reporting',
+  'general': 'General Business Operations'
+} as const;
+
+app.post('/api/send-report', async (req: Request, res: Response) => {
+  try {
     const { userEmail, userName, report, painPoint, techReadiness } = req.body;
 
     if (!userEmail || !report) {
-      res.status(400).json({ error: 'Missing required fields' });
-      return;
+      return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Check for Resend API key
     const resendApiKey = process.env.RESEND_API_KEY?.trim();
     if (!resendApiKey) {
       console.error('❌ RESEND_API_KEY environment variable is not set');
-      res.status(500).json({ error: 'Email service configuration error' });
-      return;
+      return res.status(500).json({ error: 'Email service configuration error' });
     }
-
-    console.log('📧 Preparing to send email with Resend API...');
-    console.log('- User email:', userEmail);
-    console.log('- User name:', userName || 'Not provided');
-    console.log('- Has AI summary:', !!report.aiGeneratedSummary);
-    console.log('- API key length:', resendApiKey.length);
 
     const customerEmailHtml = generateReportHtml(report, painPoint, techReadiness);
     const adminEmailHtml = generateAdminReportHtml(userEmail, userName, report, painPoint, techReadiness);
 
-    try {
-      // Send email to customer
-      const customerResponse = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          "Authorization": `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'Jason Henry <jason@nomadicliberty.com>',
-          to: userEmail,
-          subject: 'Your Workflow AI Audit Results',
-          html: customerEmailHtml,
-        }),
-      });
+    // Send customer email
+    const customerResponse = await fetch(EMAIL_CONFIG.RESEND_API_URL, {
+      method: 'POST',
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: EMAIL_CONFIG.FROM_CUSTOMER,
+        to: userEmail,
+        subject: 'Your Workflow AI Audit Results',
+        html: customerEmailHtml,
+      }),
+    });
 
-      // Send copy to admin with customer details
-      const adminResponse = await fetch('https://api.resend.com/emails', {
+    if (!customerResponse.ok) {
+      const error = await customerResponse.json();
+      console.error('❌ Customer email error:', error);
+      return res.status(500).json({ error: 'Failed to send customer email' });
+    }
+
+    // Send admin email (don't fail if this fails)
+    try {
+      await fetch(EMAIL_CONFIG.RESEND_API_URL, {
         method: 'POST',
         headers: {
           "Authorization": `Bearer ${resendApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Workflow Audit <jason@nomadicliberty.com>',
-          to: 'jason@nomadicliberty.com',
+          from: EMAIL_CONFIG.FROM_ADMIN,
+          to: EMAIL_CONFIG.TO_ADMIN,
           subject: `New Workflow Audit - ${userName || 'No Name'} - ${userEmail}`,
           html: adminEmailHtml,
         }),
       });
-
-      if (!customerResponse.ok) {
-        const error = await customerResponse.json();
-        console.error('❌ Customer email error:', error);
-        res.status(500).json({ error: 'Failed to send customer email' });
-        return;
-      }
-
-      if (!adminResponse.ok) {
-        const error = await adminResponse.json();
-        console.error('❌ Admin email error:', error);
-        // Continue even if admin email fails
-      }
-
-      const result = await customerResponse.json();
-      console.log('✅ Emails sent successfully:', result);
-      res.status(200).json({ success: true });
-    } catch (err) {
-      console.error('❌ Server error sending email:', err);
-      res.status(500).json({ error: 'Server error' });
+    } catch (adminError) {
+      console.error('❌ Admin email error (non-fatal):', adminError);
     }
-  })();
+
+    const result = await customerResponse.json();
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('❌ Server error sending email:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
-app.post('/api/generateAiSummary', (req: Request, res: Response) => {
-  (async () => {
+app.post('/api/generateAiSummary', async (req: Request, res: Response) => {
+  try {
     const { scores, keyChallenge = 'workflow efficiency', techReadiness, painPoint } = req.body;
 
-    console.log('🤖 Received AI summary request with data:', {
-      scores: scores ? 'present' : 'missing',
-      keyChallenge,
-      techReadiness: techReadiness ? 'present' : 'not provided',
-      painPoint: painPoint ? 'present' : 'not provided'
-    });
-
     if (!scores || !scores.byCategory) {
-      console.error('❌ Missing scores data in request');
-      res.status(400).json({ error: 'Missing scores data' });
-      return;
+      return res.status(400).json({ error: 'Missing scores data' });
     }
 
     const prompt = buildPrompt(scores, keyChallenge, techReadiness, painPoint);
-    console.log('📝 Generated prompt length:', prompt.length);
 
-    try {
-      console.log('🚀 Calling OpenAI API...');
-      const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.OPENAI_API_KEY?.trim()}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "gpt-4.1-mini",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.7
-        })
-      });
+    const openaiResponse = await fetch(EMAIL_CONFIG.OPENAI_API_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY?.trim()}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: EMAIL_CONFIG.OPENAI_MODEL,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7
+      })
+    });
 
-      if (!openaiResponse.ok) {
-        const err = await openaiResponse.json();
-        console.error("❌ OpenAI error:", err);
-        res.status(500).json({ error: 'Failed to get summary from GPT' });
-        return;
-      }
-
-      const json = await openaiResponse.json() as {
-      choices: { message: { content: string } }[];
-      };
-
-      const summary = json.choices?.[0]?.message?.content || 'No summary returned.';
-      console.log('✅ OpenAI response received, summary length:', summary.length);
-      res.json({ summary });
-    } catch (error) {
-      console.error("❌ GPT error:", error);
-      res.status(500).json({ error: 'Internal server error' });
+    if (!openaiResponse.ok) {
+      const err = await openaiResponse.json();
+      console.error("❌ OpenAI error:", err);
+      return res.status(500).json({ error: 'Failed to get summary from GPT' });
     }
-  })();
+
+    const json = await openaiResponse.json() as {
+      choices: { message: { content: string } }[];
+    };
+
+    const summary = json.choices?.[0]?.message?.content || 'No summary returned.';
+    res.json({ summary });
+  } catch (error) {
+    console.error("❌ GPT error:", error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
+
+// Helper functions
+const generateDots = (score: number): string => {
+  const totalDots = 5;
+  const filledDots = Math.round((score / 100) * totalDots);
+  let dotsHtml = '';
+  for (let i = 0; i < totalDots; i++) {
+    dotsHtml += `<div class="dot ${i < filledDots ? 'dot-filled' : 'dot-empty'}"></div>`;
+  }
+  return dotsHtml;
+};
+
+const getRatingClass = (rating: string): string => {
+  return RATING_CLASSES[rating as keyof typeof RATING_CLASSES] || '';
+};
+
+const getCategoryName = (category: string): string => {
+  return CATEGORY_NAMES[category as keyof typeof CATEGORY_NAMES] || category;
+};
+
+// ... keep existing code (generateReportHtml, generateAdminReportHtml, buildPrompt functions)
 
 const generateReportHtml = (
   report: any,
   painPoint?: string,
   techReadiness?: string
 ): string => {
-  // Add AI-generated summary section if available
   const aiSummarySection = report.aiGeneratedSummary ? `
     <div class="section">
       <h2>✨ AI-Generated Insights</h2>
@@ -169,7 +184,6 @@ const generateReportHtml = (
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 0; background-color: #ffffff; }
         .header { background-color: #1B365D; color: white; padding: 20px; text-align: center; }
-        .logo { max-width: 200px; margin-bottom: 10px; }
         .section { margin-bottom: 30px; padding: 0 20px; }
         .category { margin-bottom: 20px; border-left: 4px solid #00A8A8; padding-left: 15px; }
         .rating { display: inline-block; padding: 5px 10px; border-radius: 20px; font-size: 14px; font-weight: bold; margin: 5px 0; }
@@ -326,39 +340,6 @@ const generateAdminReportHtml = (
   `;
 };
 
-const generateDots = (score: number): string => {
-  const totalDots = 5;
-  const filledDots = Math.round((score / 100) * totalDots);
-
-  let dotsHtml = '';
-  for (let i = 0; i < totalDots; i++) {
-    dotsHtml += `<div class="dot ${i < filledDots ? 'dot-filled' : 'dot-empty'}"></div>`;
-  }
-
-  return dotsHtml;
-};
-
-const getRatingClass = (rating: string): string => {
-  switch (rating) {
-    case 'Manual': return 'manual';
-    case 'Partially Automated': return 'partial';
-    case 'Fully Automated': return 'automated';
-    default: return '';
-  }
-};
-
-const getCategoryName = (category: string): string => {
-  const names: Record<string, string> = {
-    'task-management': 'Task Management',
-    'customer-communication': 'Customer Communication',
-    'data-entry': 'Data Entry',
-    'scheduling': 'Scheduling',
-    'reporting': 'Reporting',
-    'general': 'General Business Operations'
-  };
-  return names[category] || category;
-};
-
 function buildPrompt(scores: any, keyChallenge: string, techReadiness?: string, painPoint?: string): string {
   const { overall, totalTimeSavings, byCategory } = scores;
 
@@ -366,7 +347,6 @@ function buildPrompt(scores: any, keyChallenge: string, techReadiness?: string, 
     .map(([name, data]: any) => `- ${name}: ${data.score}/100 (${data.level})`)
     .join('\n');
 
-  // Build personalized context
   let personalContext = '';
   const challenge = painPoint || keyChallenge;
   
@@ -397,7 +377,6 @@ Please write a comprehensive, personalized report that:
 5. Maintains an encouraging, supportive tone throughout
 
 End with a paragraph explaining how Nomadic Liberty, the consultancy that provided this audit, can help implement these improvements with hands-on support tailored to their specific needs and comfort level.
-
 
 CRITICAL FORMATTING REQUIREMENTS:
 - This is an analytical report, NOT a letter or email
