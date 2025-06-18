@@ -1,5 +1,8 @@
 
 import { AuditReport } from "../types/audit";
+import { API_CONFIG } from '../config/constants';
+import { ErrorHandler } from '../utils/errorHandler';
+import { validateEmail, sanitizeHtml } from '../utils/validation';
 
 interface SendReportEmailParams {
   userEmail: string;
@@ -10,7 +13,7 @@ interface SendReportEmailParams {
 }
 
 /**
- * Sends an email with the audit report results via API endpoint
+ * Sends an email with the audit report results via API endpoint with enhanced validation
  */
 export const sendReportEmail = async ({ 
   userEmail, 
@@ -19,55 +22,49 @@ export const sendReportEmail = async ({
   painPoint,
   techReadiness
 }: SendReportEmailParams): Promise<boolean> => {
-  try {
-    console.log(`Sending report email to ${userEmail} via API endpoint`);
-    
-    // Include AI-generated summary in the email data
-    const emailData = {
-      userEmail,
-      userName,
+  return ErrorHandler.withErrorHandling(async () => {
+    // Validate email format
+    if (!validateEmail(userEmail)) {
+      throw new Error('Invalid email address format');
+    }
+
+    // Sanitize user inputs to prevent XSS
+    const sanitizedData = {
+      userEmail: userEmail.trim().toLowerCase(),
+      userName: userName ? sanitizeHtml(userName.trim()) : undefined,
       report: {
         ...report,
-        // Ensure AI summary is included if available
-        aiGeneratedSummary: report.aiGeneratedSummary
+        aiGeneratedSummary: report.aiGeneratedSummary ? sanitizeHtml(report.aiGeneratedSummary) : undefined
       },
-      painPoint,
-      techReadiness
+      painPoint: painPoint ? sanitizeHtml(painPoint.trim()) : undefined,
+      techReadiness: techReadiness ? sanitizeHtml(techReadiness.trim()) : undefined
     };
-    
-    console.log('Email payload size:', JSON.stringify(emailData).length, 'characters');
-    
+
     // Trim AI summary if it's too large (over 5000 characters)
-    if (emailData.report.aiGeneratedSummary && emailData.report.aiGeneratedSummary.length > 5000) {
-      console.log('Trimming AI summary for email - original length:', emailData.report.aiGeneratedSummary.length);
-      emailData.report.aiGeneratedSummary = emailData.report.aiGeneratedSummary.substring(0, 4900) + '...';
+    if (sanitizedData.report.aiGeneratedSummary && sanitizedData.report.aiGeneratedSummary.length > 5000) {
+      sanitizedData.report.aiGeneratedSummary = sanitizedData.report.aiGeneratedSummary.substring(0, 4900) + '...';
     }
-    
-    // Make API call to the correct backend endpoint
-    const response = await fetch('https://workflow-ai-audit.onrender.com/api/send-report', {
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUTS.EMAIL_SEND);
+
+    const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEND_REPORT}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(emailData),
+      body: JSON.stringify(sanitizedData),
+      signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      let errorData;
-      try {
-        errorData = await response.json();
-      } catch (parseError) {
-        errorData = { error: 'Failed to parse error response' };
-      }
-      console.error("API error:", errorData);
-      return false;
+      const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
     }
 
     const result = await response.json();
-    console.log('Email sent successfully:', result);
     return true;
-  } catch (error) {
-    console.error("Error sending email:", error);
-    return false;
-  }
+  }, 'EMAIL_SEND') !== null;
 };

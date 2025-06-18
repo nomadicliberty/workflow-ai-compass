@@ -1,3 +1,4 @@
+
 export type RatingLevel = 'Manual' | 'Partially Automated' | 'Fully Automated';
 
 export interface AuditQuestion {
@@ -28,7 +29,7 @@ export interface CategoryAssessment {
   score: number;
   tools: string[];
   improvements: string[];
-  timeSavings: string; // Added time savings estimate
+  timeSavings: string;
 }
 
 export interface AuditReport {
@@ -36,10 +37,11 @@ export interface AuditReport {
   overallRating: RatingLevel;
   overallScore: number;
   topRecommendations: string[];
-  totalTimeSavings: string; // Added total time savings estimate
-  aiGeneratedSummary?: string; // New field for AI-generated content
+  totalTimeSavings: string;
+  aiGeneratedSummary?: string;
 }
 
+// Enhanced type safety for category labels
 export const categoryLabels: Record<WorkflowCategory, string> = {
   'task-management': 'Task Management',
   'customer-communication': 'Customer Communication',
@@ -47,23 +49,20 @@ export const categoryLabels: Record<WorkflowCategory, string> = {
   'scheduling': 'Scheduling',
   'reporting': 'Reporting',
   'general': 'General Business Operations'
-};
+} as const;
 
 export const ratingDescriptions: Record<RatingLevel, string> = {
   'Manual': 'Processes are mostly done by hand with minimal technology assistance',
   'Partially Automated': 'Some technology and automation is in place, but with room for improvement',
   'Fully Automated': 'Processes are optimized with significant AI or automation technology'
-};
+} as const;
 
 export const getRatingColor = (rating: RatingLevel): string => {
-  switch (rating) {
-    case 'Manual':
-      return 'bg-orange-100 text-orange-800 border-orange-200';
-    case 'Partially Automated':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'Fully Automated':
-      return 'bg-green-100 text-green-800 border-green-200';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
+  const colorMap: Record<RatingLevel, string> = {
+    'Manual': 'bg-orange-100 text-orange-800 border-orange-200',
+    'Partially Automated': 'bg-blue-100 text-blue-800 border-blue-200',
+    'Fully Automated': 'bg-green-100 text-green-800 border-green-200'
+  };
+  
+  return colorMap[rating] || 'bg-gray-100 text-gray-800 border-gray-200';
 };

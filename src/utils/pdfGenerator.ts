@@ -2,15 +2,15 @@
 import { AuditReport } from "../types/audit";
 import { buildFormattedReport } from '../services/ReportBuilder';
 import { PDFRenderer } from '../renderers/PDFRenderer';
+import { ErrorHandler } from './errorHandler';
+import { APP_META } from '../config/constants';
 
 export const generatePDF = async (
   report: AuditReport, 
   painPoint?: string,
   techReadiness?: string
 ): Promise<void> => {
-  try {
-    console.log('🔄 Generating PDF with new renderer...');
-    
+  return ErrorHandler.withErrorHandling(async () => {
     // Build formatted report
     const formattedReport = buildFormattedReport(
       report,
@@ -25,12 +25,7 @@ export const generatePDF = async (
     const doc = renderer.render();
     
     // Save the PDF
-    doc.save("nomadic_liberty_workflow_audit_report.pdf");
+    doc.save(APP_META.REPORT_FILENAME);
     
-    console.log('✅ PDF generated successfully with new renderer');
-    
-  } catch (error) {
-    console.error("❌ Error generating PDF:", error);
-    throw error;
-  }
+  }, 'PDF_GENERATION');
 };

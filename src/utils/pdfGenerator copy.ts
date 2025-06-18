@@ -2,6 +2,8 @@
 import { AuditReport } from "../types/audit";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { CATEGORY_NAMES, APP_META } from '../config/constants';
+import { ErrorHandler } from './errorHandler';
 
 // Define types for jsPDF with autotable
 declare module "jspdf" {
@@ -15,7 +17,7 @@ export const generatePDF = async (
   painPoint?: string,
   techReadiness?: string
 ): Promise<void> => {
-  try {
+  return ErrorHandler.withErrorHandling(async () => {
     // Create a new PDF document
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -29,7 +31,7 @@ export const generatePDF = async (
     
     doc.setFontSize(12);
     doc.setTextColor(100, 100, 100); // Gray color
-    doc.text("Nomadic Liberty LLC", pageWidth / 2, yPos, { align: "center" });
+    doc.text(APP_META.COMPANY_NAME, pageWidth / 2, yPos, { align: "center" });
     yPos += 15;
     
     // Add personalized summary if available
@@ -44,9 +46,9 @@ export const generatePDF = async (
         personalizedText += `We understand that "${painPoint}" is your primary operational challenge. `;
       }
       
-      if (techReadiness && techReadiness.includes("Very eager")) {
+      if (techReadiness?.includes("Very eager")) {
         personalizedText += "Your team's enthusiasm for new technology positions you well to implement the suggested automation solutions.";
-      } else if (techReadiness && techReadiness.includes("resistant")) {
+      } else if (techReadiness?.includes("resistant")) {
         personalizedText += "We've focused on solutions that are user-friendly and come with excellent support resources for teams that may need extra assistance with new technology.";
       } else {
         personalizedText += "Our recommendations are tailored to match your team's comfort level with technology adoption.";
@@ -107,7 +109,7 @@ export const generatePDF = async (
         yPos = 20;
       }
       
-      const categoryName = getCategoryName(category.category);
+      const categoryName = CATEGORY_NAMES[category.category] || category.category;
       
       doc.setFontSize(12);
       doc.text(categoryName, 14, yPos);
@@ -150,32 +152,14 @@ export const generatePDF = async (
       yPos = (doc as any).lastAutoTable.finalY + 15;
     }
     
-      
     // Add footer
     yPos = doc.internal.pageSize.getHeight() - 10;
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
-    doc.text(`© ${new Date().getFullYear()} Nomadic Liberty LLC. All rights reserved.`, pageWidth / 2, yPos, { align: "center" });
+    doc.text(`© ${new Date().getFullYear()} ${APP_META.COMPANY_NAME}. All rights reserved.`, pageWidth / 2, yPos, { align: "center" });
     
     // Save the PDF
-    doc.save("nomadic_liberty_workflow_audit_report.pdf");
+    doc.save(APP_META.REPORT_FILENAME);
     
-  } catch (error) {
-    console.error("Error generating PDF:", error);
-    throw error;
-  }
-};
-
-// Helper function
-const getCategoryName = (category: string): string => {
-  const names: Record<string, string> = {
-    'task-management': 'Task Management',
-    'customer-communication': 'Customer Communication',
-    'data-entry': 'Data Entry',
-    'scheduling': 'Scheduling',
-    'reporting': 'Reporting',
-    'general': 'General Business Operations'
-  };
-  
-  return names[category] || category;
+  },  'PDF_GENERATION_LEGACY');
 };
