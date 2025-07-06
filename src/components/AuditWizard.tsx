@@ -230,11 +230,12 @@ const AuditWizard: React.FC = () => {
           currentAnswer={answers.find(a => a.questionId === currentQuestions[currentStep].id)?.value}
         />
         
-        <div className="flex justify-between mt-8">
+        <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 mt-6 sm:mt-8">
           <Button
             variant="outline"
             onClick={handlePreviousQuestion}
             disabled={currentStep === 0}
+            className="order-2 sm:order-1 min-h-[48px] touch-manipulation"
           >
             Back
           </Button>
@@ -242,7 +243,7 @@ const AuditWizard: React.FC = () => {
           <Button 
             onClick={handleNextQuestion}
             disabled={!isCurrentQuestionAnswered()}
-            className="bg-nomadic-teal hover:bg-nomadic-navy text-white"
+            className="bg-nomadic-teal hover:bg-nomadic-navy text-white order-1 sm:order-2 min-h-[48px] touch-manipulation"
           >
             {currentStep < totalSteps - 1 ? (
               <>Next <ArrowRight className="ml-2 h-4 w-4" /></>
@@ -256,7 +257,7 @@ const AuditWizard: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8 lg:px-8">
       {renderContent()}
     </div>
   );
