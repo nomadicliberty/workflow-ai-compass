@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { AuditReport, AuditAnswer } from '../types/audit';
 import { useToast } from '@/hooks/use-toast';
 import { generateAuditReport } from '../data/auditQuestions';
@@ -14,14 +14,35 @@ export const useReportGeneration = () => {
   const [userName, setUserName] = useState<string>('');
   const { toast } = useToast();
   
-  // Prevent duplicate AI generation calls
+  // Prevent duplicate AI generation calls and track component mount state
   const aiGenerationInProgress = useRef(false);
+  const isMountedRef = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const handleEmailSubmit = async (data: { email: string; name: string }, answers: AuditAnswer[]) => {
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  // Debounced email submission to prevent rapid-fire calls
+  const handleEmailSubmit = useCallback(async (data: { email: string; name: string }, answers: AuditAnswer[]) => {
     // Prevent duplicate calls
     if (aiGenerationInProgress.current) {
       return;
     }
+
+    // Check if component is still mounted
+    if (!isMountedRef.current) {
+      return;
+    }
+
+    // Create abort controller for this request
+    abortControllerRef.current = new AbortController();
 
     setUserEmail(data.email);
     setUserName(data.name);
@@ -33,6 +54,9 @@ export const useReportGeneration = () => {
       // Generate base report using existing logic
       const baseReport = generateAuditReport(answers);
       
+      // Check if still mounted before continuing
+      if (!isMountedRef.current) return;
+      
       // Get all user inputs for AI generation
       const painPointAnswer = answers.find(a => a.questionId === 'general-1')?.value || '';
       const techReadinessAnswer = answers.find(a => a.questionId === 'general-2')?.value || '';
@@ -42,8 +66,9 @@ export const useReportGeneration = () => {
       // Transform report data for AI backend
       const reportScores = transformReportForAI(baseReport);
       
-      // Try to get AI-generated summary
+      // Try to get AI-generated summary with retry logic
       try {
+        if (!isMountedRef.current) return;
         setGenerationStatus('Generating AI-powered insights...');
         
         const aiSummary = await generateAIReport(
@@ -53,6 +78,8 @@ export const useReportGeneration = () => {
           businessTypeAnswer,
           teamSizeAnswer
         );
+        
+        if (!isMountedRef.current) return;
         
         if (aiSummary && aiSummary.trim()) {
           baseReport.aiGeneratedSummary = aiSummary.trim();
@@ -65,6 +92,7 @@ export const useReportGeneration = () => {
           throw new Error('Empty AI response');
         }
       } catch (aiError) {
+        if (!isMountedRef.current) return;
         ErrorHandler.logError(aiError as Error, 'AI_GENERATION_FAILED');
         setGenerationStatus('Using standard analysis...');
         toast({
@@ -73,11 +101,15 @@ export const useReportGeneration = () => {
         });
       }
       
+      // Check if still mounted before setting report
+      if (!isMountedRef.current) return;
+      
       // Set the report BEFORE trying to send email
       setReport(baseReport);
       
-      // Send email with the report
+      // Send email with the report with retry logic
       try {
+        if (!isMountedRef.current) return;
         setGenerationStatus('Sending email report...');
         
         const emailSent = await sendReportEmail({
@@ -87,6 +119,8 @@ export const useReportGeneration = () => {
           painPoint: painPointAnswer,
           techReadiness: techReadinessAnswer
         });
+        
+        if (!isMountedRef.current) return;
         
         if (emailSent) {
           toast({
@@ -101,6 +135,7 @@ export const useReportGeneration = () => {
           });
         }
       } catch (emailError) {
+        if (!isMountedRef.current) return;
         ErrorHandler.logError(emailError as Error, 'EMAIL_SEND_FAILED');
         toast({
           title: "Email Delivery Issue", 
@@ -109,6 +144,7 @@ export const useReportGeneration = () => {
         });
       }
     } catch (error) {
+      if (!isMountedRef.current) return;
       ErrorHandler.logError(error as Error, 'REPORT_GENERATION_FAILED');
       toast({
         title: "Something went wrong",
@@ -116,11 +152,14 @@ export const useReportGeneration = () => {
         variant: "destructive",
       });
     } finally {
-      setIsGeneratingReport(false);
-      setGenerationStatus('');
+      if (isMountedRef.current) {
+        setIsGeneratingReport(false);
+        setGenerationStatus('');
+      }
       aiGenerationInProgress.current = false;
+      abortControllerRef.current = null;
     }
-  };
+  }, [toast]);
 
   const resetReport = () => {
     setReport(null);

@@ -13,7 +13,7 @@ interface SendReportEmailParams {
 }
 
 /**
- * Sends an email with the audit report results via API endpoint with enhanced validation
+ * Sends an email with the audit report results via API endpoint with enhanced validation and retry logic
  */
 export const sendReportEmail = async ({ 
   userEmail, 
@@ -22,7 +22,7 @@ export const sendReportEmail = async ({
   painPoint,
   techReadiness
 }: SendReportEmailParams): Promise<boolean> => {
-  return ErrorHandler.withErrorHandling(async () => {
+  return ErrorHandler.withRetry(async () => {
     // Validate email format
     if (!validateEmail(userEmail)) {
       throw new Error('Invalid email address format');
@@ -48,23 +48,31 @@ export const sendReportEmail = async ({
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUTS.EMAIL_SEND);
 
-    const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEND_REPORT}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(sanitizedData),
-      signal: controller.signal,
-    });
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEND_REPORT}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sanitizedData),
+        signal: controller.signal,
+      });
 
-    clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
-      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      return true;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout');
+      }
+      throw error;
     }
-
-    const result = await response.json();
-    return true;
-  }, 'EMAIL_SEND') !== null;
+  }, 'EMAIL_SEND', 2, 2000) !== null; // 2 retries with 2s base delay
 };
