@@ -43,22 +43,26 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, onAnswer, current
 
   return (
     <Card className="shadow-lg border border-gray-200">
-      <CardHeader className="bg-workflow-blue bg-opacity-50 rounded-t-lg">
-        <h2 className="text-xl font-semibold">{question.text}</h2>
+      <CardHeader className="bg-workflow-blue bg-opacity-50 rounded-t-lg p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold leading-relaxed">{question.text}</h2>
       </CardHeader>
-      <CardContent className="pt-6 pb-8">
+      <CardContent className="pt-4 sm:pt-6 pb-6 sm:pb-8 px-4 sm:px-6">
         {question.type === 'multiple-choice' && question.options && (
           <RadioGroup 
             value={answer} 
             onValueChange={handleRadioChange}
-            className="space-y-4"
+            className="space-y-3 sm:space-y-4"
           >
             {question.options.map((option, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <RadioGroupItem value={option} id={`option-${question.id}-${index}`} />
+              <div key={index} className="flex items-start space-x-3 p-2 rounded-md hover:bg-gray-50 transition-colors">
+                <RadioGroupItem 
+                  value={option} 
+                  id={`option-${question.id}-${index}`}
+                  className="mt-0.5 min-w-[20px] h-5 w-5"
+                />
                 <Label 
                   htmlFor={`option-${question.id}-${index}`}
-                  className="cursor-pointer text-base"
+                  className="cursor-pointer text-sm sm:text-base leading-relaxed flex-1 min-h-[44px] flex items-center"
                 >
                   {option}
                 </Label>
@@ -72,7 +76,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, onAnswer, current
             placeholder="Enter your response..."
             value={answer}
             onChange={handleTextChange}
-            className="min-h-[120px] mt-2"
+            className="min-h-[120px] sm:min-h-[140px] mt-2 text-sm sm:text-base p-3 sm:p-4 resize-none"
           />
         )}
       </CardContent>

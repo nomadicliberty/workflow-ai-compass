@@ -90,4 +90,51 @@ export class ErrorHandler {
       return null;
     }
   }
+
+  // Enhanced retry logic with exponential backoff
+  static async withRetry<T>(
+    operation: () => Promise<T>,
+    context: string,
+    maxRetries: number = 3,
+    baseDelay: number = 1000
+  ): Promise<T | null> {
+    let lastError: unknown;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error;
+        
+        // Don't retry on validation errors or client errors (4xx)
+        if (error instanceof Error && error.message.includes('400')) {
+          this.handleApiError(error, context);
+          return null;
+        }
+        
+        // Don't retry on the last attempt
+        if (attempt === maxRetries) {
+          break;
+        }
+        
+        // Exponential backoff: 1s, 2s, 4s
+        const delay = baseDelay * Math.pow(2, attempt);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    this.handleApiError(lastError, context);
+    return null;
+  }
+
+  // Silent error logging for non-critical errors
+  static logError(error: Error, context: string): void {
+    const appError: AppError = {
+      code: context.toUpperCase(),
+      message: error.message,
+      userMessage: '',
+      timestamp: new Date()
+    };
+    this.logError(appError);
+  }
 }
