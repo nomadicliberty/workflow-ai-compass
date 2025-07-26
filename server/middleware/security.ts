@@ -36,7 +36,7 @@ export const aiLimiter = rateLimit({
 
 export const corsOptions = {
   origin: process.env.NODE_ENV === 'production' ? 
-    ['https://yourdomain.com', 'https://www.yourdomain.com'] : 
+    ['https://audit.nomadicliberty.com'] : 
     ['http://localhost:5173', 'http://127.0.0.1:5173'],
   credentials: true,
   optionsSuccessStatus: 200
