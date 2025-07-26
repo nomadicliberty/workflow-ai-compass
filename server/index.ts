@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { securityMiddleware, generalLimiter, corsOptions, emailLimiter, aiLimiter } from './middleware/security';
-import { validateEmailRequest, validateAIRequest } from './middleware/validation';
+import { emailValidationRules, aiValidationRules, handleValidationErrors } from './middleware/validation';
 import { handleSendReport } from './handlers/emailHandler';
 import { handleGenerateAiSummary } from './handlers/aiHandler';
 
@@ -18,8 +18,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Routes
-app.post('/api/send-report', emailLimiter, validateEmailRequest, handleSendReport);
-app.post('/api/generateAiSummary', aiLimiter, validateAIRequest, handleGenerateAiSummary);
+app.post('/api/send-report', emailLimiter, emailValidationRules, handleValidationErrors, handleSendReport);
+app.post('/api/generateAiSummary', aiLimiter, aiValidationRules, handleValidationErrors, handleGenerateAiSummary);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
