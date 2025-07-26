@@ -1,8 +1,8 @@
 
 // Environment configuration for deployment readiness
 export const ENV_CONFIG = {
-  // API Base URL - defaults to production, can be overridden for development
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://workflow-ai-audit.onrender.com',
+  // API Base URL - defaults to current domain (works with Vercel deployment)
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || '',
   
   // Development flags
   IS_DEVELOPMENT: import.meta.env.DEV,

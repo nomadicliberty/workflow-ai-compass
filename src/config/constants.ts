@@ -3,7 +3,7 @@ import { WorkflowCategory, RatingLevel } from '../types/audit';
 
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: '', // Use relative URLs for Vercel deployment
+  BASE_URL: '', // Use relative URLs - works with Vite proxy in dev
   ENDPOINTS: {
     SEND_REPORT: '/api/send-report',
     GENERATE_AI_SUMMARY: '/api/generateAiSummary'
