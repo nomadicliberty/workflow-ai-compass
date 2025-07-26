@@ -3,7 +3,7 @@ import { WorkflowCategory, RatingLevel } from '../types/audit';
 
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: 'https://workflow-ai-audit.onrender.com',
+  BASE_URL: '', // Use relative URLs for Vercel deployment
   ENDPOINTS: {
     SEND_REPORT: '/api/send-report',
     GENERATE_AI_SUMMARY: '/api/generateAiSummary'

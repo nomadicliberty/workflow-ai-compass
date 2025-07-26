@@ -1,8 +1,98 @@
-export const generateReportHtml = (
-  report: any,
-  painPoint?: string,
-  techReadiness?: string
-): string => {
+// api/send-report.js
+export default async function handler(req, res) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { userEmail, userName, report, painPoint, techReadiness } = req.body;
+
+  if (!userEmail || !report) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  // Check for Resend API key
+  const resendApiKey = process.env.RESEND_API_KEY?.trim();
+  if (!resendApiKey) {
+    console.error('❌ RESEND_API_KEY environment variable is not set');
+    return res.status(500).json({ error: 'Email service configuration error' });
+  }
+
+  console.log('📧 Preparing to send email with Resend API...');
+  console.log('- User email:', userEmail);
+  console.log('- User name:', userName || 'Not provided');
+  console.log('- Has AI summary:', !!report.aiGeneratedSummary);
+  console.log('- API key length:', resendApiKey.length);
+
+  const customerEmailHtml = generateReportHtml(report, painPoint, techReadiness);
+  const adminEmailHtml = generateAdminReportHtml(userEmail, userName, report, painPoint, techReadiness);
+
+  try {
+    // Send email to customer
+    const customerResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Jason Henry <jason@nomadicliberty.com>',
+        to: userEmail,
+        subject: 'Your Workflow AI Audit Results',
+        html: customerEmailHtml,
+      }),
+    });
+
+    // Send copy to admin with customer details
+    const adminResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Workflow Audit <jason@nomadicliberty.com>',
+        to: 'jason@nomadicliberty.com',
+        subject: `New Workflow Audit - ${userName || 'No Name'} - ${userEmail}`,
+        html: adminEmailHtml,
+      }),
+    });
+
+    if (!customerResponse.ok) {
+      const error = await customerResponse.json();
+      console.error('❌ Customer email error:', error);
+      return res.status(500).json({ error: 'Failed to send customer email' });
+    }
+
+    if (!adminResponse.ok) {
+      const error = await adminResponse.json();
+      console.error('❌ Admin email error:', error);
+      // Continue even if admin email fails
+    }
+
+    const result = await customerResponse.json();
+    console.log('✅ Emails sent successfully:', result);
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('❌ Server error sending email:', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+}
+
+const generateReportHtml = (
+  report,
+  painPoint,
+  techReadiness
+) => {
+  // Add AI-generated summary section if available
   const aiSummarySection = report.aiGeneratedSummary ? `
     <div class="section">
       <h2>✨ AI-Generated Insights</h2>
@@ -20,6 +110,7 @@ export const generateReportHtml = (
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 0; background-color: #ffffff; }
         .header { background-color: #1B365D; color: white; padding: 20px; text-align: center; }
+        .logo { max-width: 200px; margin-bottom: 10px; }
         .section { margin-bottom: 30px; padding: 0 20px; }
         .category { margin-bottom: 20px; border-left: 4px solid #00A8A8; padding-left: 15px; }
         .rating { display: inline-block; padding: 5px 10px; border-radius: 20px; font-size: 14px; font-weight: bold; margin: 5px 0; }
@@ -63,13 +154,13 @@ export const generateReportHtml = (
         <div class="section">
           <h2>Top Recommendations:</h2>
           <ul>
-            ${report.topRecommendations.map((rec: string) => `<li>${rec}</li>`).join('')}
+            ${report.topRecommendations.map((rec) => `<li>${rec}</li>`).join('')}
           </ul>
         </div>
 
         <div class="section">
           <h2>Detailed Analysis by Area:</h2>
-          ${report.categories.map((cat: any) => `
+          ${report.categories.map((cat) => `
             <div class="category">
               <h3>${getCategoryName(cat.category)}</h3>
               <p>Current automation level: <span class="${getRatingClass(cat.rating)}">${cat.rating}</span></p>
@@ -86,7 +177,7 @@ export const generateReportHtml = (
               <p><strong>Recommended tools:</strong> ${cat.tools.join(', ')}</p>
               <p><strong>Suggested improvements:</strong></p>
               <ul>
-                ${cat.improvements.map((imp: string) => `<li>${imp}</li>`).join('')}
+                ${cat.improvements.map((imp) => `<li>${imp}</li>`).join('')}
               </ul>
             </div>
           `).join('')}
@@ -94,7 +185,7 @@ export const generateReportHtml = (
 
         <div class="section" style="text-align: center;">
           <p><strong>Ready to enhance your workflow?</strong></p>
-          <a href="https://calendar.app.google/fDRgarRXA42zzqEo8" class="button">Book a Free 20-Minute Consultation</a>
+          <a href="https://calendar.app.google/fDRgarRXA42zzqEo8" class="button" style="background-color: #00A8A8; color: #FFFFFF;">Book a Free 20-Minute Consultation</a>
         </div>
 
         <div class="footer">
@@ -109,13 +200,13 @@ export const generateReportHtml = (
   `;
 };
 
-export const generateAdminReportHtml = (
-  userEmail: string,
-  userName: string | undefined,
-  report: any,
-  painPoint?: string,
-  techReadiness?: string
-): string => {
+const generateAdminReportHtml = (
+  userEmail,
+  userName,
+  report,
+  painPoint,
+  techReadiness
+) => {
   return `
     <!DOCTYPE html>
     <html>
@@ -146,7 +237,7 @@ export const generateAdminReportHtml = (
 
       <div class="section">
         <h2>Category Breakdown</h2>
-        ${report.categories.map((cat: any) => `
+        ${report.categories.map((cat) => `
           <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
             <h3>${getCategoryName(cat.category)}</h3>
             <p>Score: ${cat.score}/100 (${cat.rating})</p>
@@ -168,7 +259,7 @@ export const generateAdminReportHtml = (
       <div class="section">
         <h2>Top Recommendations</h2>
         <ul>
-          ${report.topRecommendations.map((rec: string) => `<li>${rec}</li>`).join('')}
+          ${report.topRecommendations.map((rec) => `<li>${rec}</li>`).join('')}
         </ul>
       </div>
     </body>
@@ -176,17 +267,19 @@ export const generateAdminReportHtml = (
   `;
 };
 
-const generateDots = (score: number): string => {
+const generateDots = (score) => {
   const totalDots = 5;
   const filledDots = Math.round((score / 100) * totalDots);
+
   let dotsHtml = '';
   for (let i = 0; i < totalDots; i++) {
     dotsHtml += `<div class="dot ${i < filledDots ? 'dot-filled' : 'dot-empty'}"></div>`;
   }
+
   return dotsHtml;
 };
 
-const getRatingClass = (rating: string): string => {
+const getRatingClass = (rating) => {
   switch (rating) {
     case 'Manual': return 'manual';
     case 'Partially Automated': return 'partial';
@@ -195,8 +288,8 @@ const getRatingClass = (rating: string): string => {
   }
 };
 
-const getCategoryName = (category: string): string => {
-  const names: Record<string, string> = {
+const getCategoryName = (category) => {
+  const names = {
     'task-management': 'Task Management',
     'customer-communication': 'Customer Communication',
     'data-entry': 'Data Entry',
