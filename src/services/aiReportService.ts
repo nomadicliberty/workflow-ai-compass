@@ -1,5 +1,4 @@
-
-import { API_CONFIG, CATEGORY_NAMES } from '../config/constants';
+import { API_CONFIG } from '../config/constants';
 import { ErrorHandler } from '../utils/errorHandler';
 import { validateTextInput } from '../utils/validation';
 
@@ -64,7 +63,7 @@ export const generateAIReport = async (
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUTS.AI_GENERATION);
-    
+
     try {
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GENERATE_AI_SUMMARY}`, {
         method: 'POST',
@@ -83,11 +82,11 @@ export const generateAIReport = async (
       }
 
       const aiResponse: AIReportResponse = await response.json();
-      
+
       if (!aiResponse.summary) {
         throw new Error('No summary received from AI service');
       }
-      
+
       return aiResponse.summary;
     } catch (error) {
       clearTimeout(timeoutId);
@@ -104,10 +103,10 @@ export const generateAIReport = async (
  */
 export const transformReportForAI = (report: any): ReportScores => {
   const byCategory: Record<string, CategoryScore> = {};
-  
+
   report.categories.forEach((category: any) => {
-    const categoryName = CATEGORY_NAMES[category.category as keyof typeof CATEGORY_NAMES] || category.category;
-    byCategory[categoryName] = {
+    // Use internal backend key, not display name
+    byCategory[category.category] = {
       score: category.score,
       level: category.rating
     };
