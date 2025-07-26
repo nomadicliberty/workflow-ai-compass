@@ -12,9 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 export class ReactRenderer extends BaseRenderer {
   renderHeader(section: ReportSection): React.ReactElement {
     return (
-      <div key={section.id} className="text-center mb-6 sm:mb-8 px-2">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-nomadic-navy leading-tight">{section.content.title}</h1>
-        <p className="text-sm sm:text-base text-nomadic-gray max-w-2xl mx-auto leading-relaxed">
+      <div key={section.id} className="text-center mb-8">
+        <h1 className="text-3xl font-bold mb-4 text-nomadic-navy">{section.content.title}</h1>
+        <p className="text-nomadic-gray max-w-2xl mx-auto">
           {section.content.subtitle}
         </p>
       </div>
@@ -144,12 +144,12 @@ export class ReactRenderer extends BaseRenderer {
 
   renderCTA(section: ReportSection): React.ReactElement {
     return (
-      <div key={section.id} className="text-center mb-6 sm:mb-8 p-4 sm:p-8 bg-nomadic-lightBlue border-2 border-nomadic-teal rounded-lg">
-        <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-nomadic-navy leading-tight">{section.content.title}</h2>
+      <div key={section.id} className="text-center mb-8 p-8 bg-nomadic-lightBlue border-2 border-nomadic-teal rounded-lg">
+        <h2 className="text-2xl font-bold mb-4 text-nomadic-navy">{section.content.title}</h2>
         {section.content.subtitle && (
-          <p className="text-sm sm:text-base text-nomadic-gray mb-4 sm:mb-6 leading-relaxed">{section.content.subtitle}</p>
+          <p className="text-nomadic-gray mb-6">{section.content.subtitle}</p>
         )}
-        <Button asChild className="bg-nomadic-teal hover:bg-nomadic-navy text-white px-6 sm:px-8 py-3 text-base sm:text-lg min-h-[48px] touch-manipulation w-full sm:w-auto">
+        <Button asChild className="bg-nomadic-teal hover:bg-nomadic-navy text-white px-8 py-3 text-lg">
           <a href={section.content.link} target="_blank" rel="noopener noreferrer">
             {section.content.linkText}
           </a>
@@ -177,14 +177,10 @@ export class ReactRenderer extends BaseRenderer {
       <div key="categories" className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Detailed Results</h2>
         <Tabs defaultValue={categorySections[0].content.category}>
-          <TabsList className="mb-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 sm:gap-0 h-auto p-1">
+          <TabsList className="mb-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
             {categorySections.map((section) => (
-              <TabsTrigger 
-                key={section.content.category} 
-                value={section.content.category}
-                className="text-xs sm:text-sm py-2 px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-nomadic-teal data-[state=active]:text-white"
-              >
-                <span className="truncate">{section.content.categoryName}</span>
+              <TabsTrigger key={section.content.category} value={section.content.category}>
+                {section.content.categoryName}
               </TabsTrigger>
             ))}
           </TabsList>

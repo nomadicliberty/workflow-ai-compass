@@ -28,7 +28,7 @@ interface AIReportResponse {
 }
 
 /**
- * Sends assessment data to the AI backend for report generation with enhanced error handling and retry logic
+ * Sends assessment data to the AI backend for report generation with enhanced error handling
  */
 export const generateAIReport = async (
   scores: ReportScores,
@@ -37,7 +37,7 @@ export const generateAIReport = async (
   businessType?: string,
   teamSize?: string
 ): Promise<string> => {
-  return ErrorHandler.withRetry(async () => {
+  return ErrorHandler.withErrorHandling(async () => {
     // Validate inputs
     if (keyChallenge) {
       const validation = validateTextInput(keyChallenge);
@@ -65,38 +65,30 @@ export const generateAIReport = async (
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUTS.AI_GENERATION);
     
-    try {
-      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GENERATE_AI_SUMMARY}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-        signal: controller.signal,
-      });
+    const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GENERATE_AI_SUMMARY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData),
+      signal: controller.signal,
+    });
 
-      clearTimeout(timeoutId);
+    clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const aiResponse: AIReportResponse = await response.json();
-      
-      if (!aiResponse.summary) {
-        throw new Error('No summary received from AI service');
-      }
-      
-      return aiResponse.summary;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('AI generation timeout');
-      }
-      throw error;
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
     }
-  }, 'AI_REPORT_GENERATION', 2, 3000) || ''; // 2 retries with 3s base delay
+
+    const aiResponse: AIReportResponse = await response.json();
+    
+    if (!aiResponse.summary) {
+      throw new Error('No summary received from AI service');
+    }
+    
+    return aiResponse.summary;
+  }, 'AI_REPORT_GENERATION') || '';
 };
 
 /**
