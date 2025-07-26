@@ -139,8 +139,20 @@ This project integrates with Lovable.dev for collaborative development:
 - Local development supported with standard npm commands
 - Vercel handles automatic deployments from git commits
 
-### Security Considerations
-- Input validation on all user-submitted data
-- CORS properly configured for API endpoints
-- Environment variables for sensitive configuration
-- XSS prevention through proper input sanitization
+### Production Deployment
+**Critical**: Use minimal or empty `vercel.json` configuration. Vercel's auto-detection works best.
+- ❌ **Avoid**: Custom `builds` configuration (deprecated and breaks API function deployment)
+- ✅ **Use**: Empty `{}` or no `vercel.json` file
+- API functions in `/api/` folder are automatically detected and deployed
+
+### Security Features
+- **Rate limiting**: 10 AI requests, 5 email requests per 15 minutes per IP
+- **Input validation**: XSS protection, length limits, type checking on all user inputs
+- **CORS protection**: Restricted to specific domains (`audit.nomadicliberty.com`, localhost)
+- **Request size limits**: 10KB for AI, 50KB for email endpoints
+- **Privacy compliance**: No user PII logged in production
+- **Fallback system**: Generates reports even when AI service fails
+
+### Known Issues & Solutions
+- **PDF formatting**: Screen and email reports work perfectly; PDF has minor styling issues (acceptable for MVP)
+- **API 404 errors**: Always caused by incorrect `vercel.json` configuration blocking function deployment
