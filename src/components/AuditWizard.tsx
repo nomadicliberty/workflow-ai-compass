@@ -1,7 +1,7 @@
 
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef } from 'react';
 import { AuditQuestion, AuditAnswer, AuditReport } from '../types/audit';
-import { getQuestionsForIndustry, generateAuditReport } from '../data/auditQuestions';
+import { auditQuestions, generateAuditReport } from '../data/auditQuestions';
 import QuestionCard from './QuestionCard';
 import ProgressBar from './ProgressBar';
 import ReportView from './ReportView';
@@ -13,7 +13,6 @@ import { ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { sendReportEmail } from '../services/emailService';
 import { generateAIReport, transformReportForAI } from '../services/aiReportService';
-import { ErrorHandler } from '../utils/errorHandler';
 
 const AuditWizard: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(-1);
@@ -29,19 +28,7 @@ const AuditWizard: React.FC = () => {
   // Prevent duplicate AI generation calls
   const aiGenerationInProgress = useRef(false);
 
-  // Get selected industry from answers to determine question set
-  const selectedIndustry = answers.find(a => a.questionId === 'business-context-1')?.value || '';
-  
-  // Memoize questions based on selected industry
-  const currentQuestions = useMemo(() => {
-    if (selectedIndustry) {
-      return getQuestionsForIndustry(selectedIndustry);
-    }
-    // Default to universal questions if no industry selected yet
-    return getQuestionsForIndustry('Other'); 
-  }, [selectedIndustry]);
-
-  const totalSteps = currentQuestions.length;
+  const totalSteps = auditQuestions.length;
 
   const handleStartAudit = () => {
     setCurrentStep(0);
@@ -84,8 +71,11 @@ const AuditWizard: React.FC = () => {
   };
 
   const handleEmailSubmit = async (data: { email: string; name: string }) => {
+    console.log('🔥 AuditWizard: handleEmailSubmit called with data:', data);
+    
     // Prevent duplicate calls
     if (aiGenerationInProgress.current) {
+      console.log('🔄 AI generation already in progress, skipping duplicate call');
       return;
     }
 
@@ -96,8 +86,11 @@ const AuditWizard: React.FC = () => {
     aiGenerationInProgress.current = true;
     
     try {
+      console.log('🏁 Starting report generation process...');
+      
       // Generate base report using existing logic
       const baseReport = generateAuditReport(answers);
+      console.log('📊 Base report generated:', baseReport);
       
       // Get all user inputs for AI generation
       const painPointAnswer = answers.find(a => a.questionId === 'general-1')?.value || '';
@@ -105,12 +98,20 @@ const AuditWizard: React.FC = () => {
       const businessTypeAnswer = answers.find(a => a.questionId === 'business-context-1')?.value || '';
       const teamSizeAnswer = answers.find(a => a.questionId === 'business-context-2')?.value || '';
       
+      console.log('🔍 Extracted user inputs:');
+      console.log('- Pain Point:', painPointAnswer);
+      console.log('- Tech Readiness:', techReadinessAnswer);
+      console.log('- Business Type:', businessTypeAnswer);
+      console.log('- Team Size:', teamSizeAnswer);
+      
       // Transform report data for AI backend
       const reportScores = transformReportForAI(baseReport);
+      console.log('📈 Transformed scores for AI:', reportScores);
       
       // Try to get AI-generated summary
       try {
         setGenerationStatus('Generating AI-powered insights...');
+        console.log('🤖 Calling AI generation service...');
         
         const aiSummary = await generateAIReport(
           reportScores, 
@@ -120,18 +121,26 @@ const AuditWizard: React.FC = () => {
           teamSizeAnswer
         );
         
+        console.log('✅ AI summary received:', {
+          length: aiSummary?.length || 0,
+          preview: aiSummary?.substring(0, 100) + '...',
+          hasContent: !!(aiSummary && aiSummary.trim())
+        });
+        
         if (aiSummary && aiSummary.trim()) {
           baseReport.aiGeneratedSummary = aiSummary.trim();
+          console.log('🎯 AI summary successfully attached to report');
           
           toast({
             title: "AI Report Generated!",
             description: "Your personalized workflow assessment has been enhanced with AI insights.",
           });
         } else {
+          console.warn('⚠️ AI summary is empty or invalid:', aiSummary);
           throw new Error('Empty AI response');
         }
       } catch (aiError) {
-        ErrorHandler.logError(aiError as Error, 'AI_GENERATION_FAILED');
+        console.error("❌ AI generation failed:", aiError);
         setGenerationStatus('Using standard analysis...');
         toast({
           title: "Report Generated",
@@ -145,6 +154,7 @@ const AuditWizard: React.FC = () => {
       // Send email with the report
       try {
         setGenerationStatus('Sending email report...');
+        console.log('📧 Attempting to send email to:', data.email);
         
         const emailSent = await sendReportEmail({
           userEmail: data.email,
@@ -155,11 +165,13 @@ const AuditWizard: React.FC = () => {
         });
         
         if (emailSent) {
+          console.log('✅ Email sent successfully');
           toast({
             title: "Report Sent!",
             description: "Your personalized workflow audit has been sent to your email.",
           });
         } else {
+          console.warn('⚠️ Email sending returned false');
           toast({
             title: "Email Delivery Issue",
             description: "We generated your report but had trouble sending the email. You can still view it here.",
@@ -167,7 +179,7 @@ const AuditWizard: React.FC = () => {
           });
         }
       } catch (emailError) {
-        ErrorHandler.logError(emailError as Error, 'EMAIL_SEND_FAILED');
+        console.error("❌ Email sending failed:", emailError);
         toast({
           title: "Email Delivery Issue", 
           description: "We generated your report but had trouble sending the email. You can still view it here.",
@@ -175,7 +187,7 @@ const AuditWizard: React.FC = () => {
         });
       }
     } catch (error) {
-      ErrorHandler.logError(error as Error, 'REPORT_GENERATION_FAILED');
+      console.error("❌ Error in report generation flow:", error);
       toast({
         title: "Something went wrong",
         description: "There was an error generating your report. Please try again.",
@@ -186,12 +198,13 @@ const AuditWizard: React.FC = () => {
       setGenerationStatus('');
       setShowEmailForm(false);
       aiGenerationInProgress.current = false;
+      console.log('🏁 Report generation process completed');
     }
   };
 
   const isCurrentQuestionAnswered = () => {
     if (currentStep < 0 || currentStep >= totalSteps) return true;
-    return answers.some(a => a.questionId === currentQuestions[currentStep].id);
+    return answers.some(a => a.questionId === auditQuestions[currentStep].id);
   };
 
   // Render appropriate screen based on state
@@ -225,9 +238,9 @@ const AuditWizard: React.FC = () => {
         />
         
         <QuestionCard
-          question={currentQuestions[currentStep]}
+          question={auditQuestions[currentStep]}
           onAnswer={handleAnswer}
-          currentAnswer={answers.find(a => a.questionId === currentQuestions[currentStep].id)?.value}
+          currentAnswer={answers.find(a => a.questionId === auditQuestions[currentStep].id)?.value}
         />
         
         <div className="flex justify-between mt-8">
