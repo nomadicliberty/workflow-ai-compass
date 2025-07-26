@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 import type { Request, Response } from 'express';
 import { generateReportHtml, generateAdminReportHtml } from '../utils/emailTemplates';
 
-export const handleSendReport = async (req: Request, res: Response) => {
+export const handleSendReport = async (req: Request, res: Response): Promise<void> => {
   const { userEmail, userName, report, painPoint, techReadiness } = req.body;
 
   if (!userEmail || !report) {

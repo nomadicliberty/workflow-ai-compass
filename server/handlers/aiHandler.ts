@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 import type { Request, Response } from 'express';
 import { buildPrompt } from '../utils/aiPrompt';
 
-export const handleGenerateAiSummary = async (req: Request, res: Response) => {
+export const handleGenerateAiSummary = async (req: Request, res: Response): Promise<void> => {
   const { scores, keyChallenge = 'workflow efficiency', techReadiness, painPoint, businessType, teamSize } = req.body;
 
   console.log('🤖 Received AI summary request with data:', {

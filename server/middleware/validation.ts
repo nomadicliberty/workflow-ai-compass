@@ -21,10 +21,11 @@ export const aiValidationRules = [
 ];
 
 // Validation error handler
-export const handleValidationErrors = (req: Request, res: Response, next: NextFunction) => {
+export const handleValidationErrors = (req: Request, res: Response, next: NextFunction): void => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ error: 'Invalid input data', details: errors.array() });
+    res.status(400).json({ error: 'Invalid input data', details: errors.array() });
+    return;
   }
   next();
 };
