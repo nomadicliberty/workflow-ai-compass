@@ -47,10 +47,10 @@ const aiLimiter = rateLimit({
 
 app.use(limiter);
 
-// CORS configuration - Updated for production
+// CORS configuration
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' ? 
-    ['https://audit.nomadicliberty.com'] : 
+    ['https://yourdomain.com', 'https://www.yourdomain.com'] : 
     ['http://localhost:5173', 'http://127.0.0.1:5173'],
   credentials: true,
   optionsSuccessStatus: 200
@@ -113,6 +113,7 @@ app.post('/api/send-report', emailLimiter, validateEmailRequest, (req: Request, 
     console.log('- User email:', userEmail);
     console.log('- User name:', userName || 'Not provided');
     console.log('- Has AI summary:', !!report.aiGeneratedSummary);
+    console.log('- API key length:', resendApiKey.length);
 
     const customerEmailHtml = generateReportHtml(report, painPoint, techReadiness);
     const adminEmailHtml = generateAdminReportHtml(userEmail, userName, report, painPoint, techReadiness);
@@ -173,15 +174,13 @@ app.post('/api/send-report', emailLimiter, validateEmailRequest, (req: Request, 
 
 app.post('/api/generateAiSummary', aiLimiter, validateAIRequest, (req: Request, res: Response) => {
   (async () => {
-    const { scores, keyChallenge = 'workflow efficiency', techReadiness, painPoint, businessType, teamSize } = req.body;
+    const { scores, keyChallenge = 'workflow efficiency', techReadiness, painPoint } = req.body;
 
     console.log('🤖 Received AI summary request with data:', {
       scores: scores ? 'present' : 'missing',
       keyChallenge,
       techReadiness: techReadiness ? 'present' : 'not provided',
-      painPoint: painPoint ? 'present' : 'not provided',
-      businessType: businessType || 'not provided',
-      teamSize: teamSize || 'not provided'
+      painPoint: painPoint ? 'present' : 'not provided'
     });
 
     if (!scores || !scores.byCategory) {
@@ -190,7 +189,7 @@ app.post('/api/generateAiSummary', aiLimiter, validateAIRequest, (req: Request, 
       return;
     }
 
-    const prompt = buildPrompt(scores, keyChallenge, techReadiness, painPoint, businessType, teamSize);
+    const prompt = buildPrompt(scores, keyChallenge, techReadiness, painPoint);
     console.log('📝 Generated prompt length:', prompt.length);
 
     try {
@@ -202,7 +201,7 @@ app.post('/api/generateAiSummary', aiLimiter, validateAIRequest, (req: Request, 
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "gpt-4.1-mini",
           messages: [{ role: "user", content: prompt }],
           temperature: 0.7
         })
@@ -252,6 +251,7 @@ const generateReportHtml = (
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 0 auto; padding: 0; background-color: #ffffff; }
         .header { background-color: #1B365D; color: white; padding: 20px; text-align: center; }
+        .logo { max-width: 200px; margin-bottom: 10px; }
         .section { margin-bottom: 30px; padding: 0 20px; }
         .category { margin-bottom: 20px; border-left: 4px solid #00A8A8; padding-left: 15px; }
         .rating { display: inline-block; padding: 5px 10px; border-radius: 20px; font-size: 14px; font-weight: bold; margin: 5px 0; }
@@ -441,23 +441,16 @@ const getCategoryName = (category: string): string => {
   return names[category] || category;
 };
 
-function buildPrompt(scores: any, keyChallenge: string, techReadiness?: string, painPoint?: string, businessType?: string, teamSize?: string): string {
+function buildPrompt(scores: any, keyChallenge: string, techReadiness?: string, painPoint?: string): string {
   const { overall, totalTimeSavings, byCategory } = scores;
 
   const categories = Object.entries(byCategory)
     .map(([name, data]: any) => `- ${name}: ${data.score}/100 (${data.level})`)
     .join('\n');
 
+  // Build personalized context
   let personalContext = '';
   const challenge = painPoint || keyChallenge;
-  
-  if (businessType && businessType !== 'Other') {
-    personalContext += `Industry: ${businessType}\n`;
-  }
-  
-  if (teamSize) {
-    personalContext += `Team size: ${teamSize}\n`;
-  }
   
   if (challenge) {
     personalContext += `Their biggest operational challenge is: ${challenge}\n`;
@@ -467,32 +460,26 @@ function buildPrompt(scores: any, keyChallenge: string, techReadiness?: string, 
     personalContext += `Their team's attitude toward new technology: ${techReadiness}\n`;
   }
 
-  // Add industry-specific context
-  let industryContext = '';
-  if (businessType && businessType !== 'Other') {
-    industryContext = getIndustrySpecificContext(businessType);
-  }
-
   return `
 You are an AI automation consultant generating a friendly, human-readable report for a small business owner who just completed a workflow audit.
 
-${personalContext}Their overall automation score is ${overall}/100  
+${personalContext}
+Their overall automation score is ${overall}/100  
 They could save about ${totalTimeSavings} hours per week with improvements.
 
 Category breakdown:
 ${categories}
 
-${industryContext}
-
 Please write a comprehensive, personalized report that:
 
-1. Addresses their specific challenge ("${challenge}") in the opening${businessType && businessType !== 'Other' ? ` within the context of the ${businessType.toLowerCase()} industry` : ''}
+1. Addresses their specific challenge ("${challenge}") in the opening
 2. ${techReadiness ? `Considers their team's technology comfort level (${techReadiness}) when making recommendations` : 'Uses accessible, non-technical language'}
-3. For each category, explains what the score means and offers 2–3 specific improvement suggestions${businessType && businessType !== 'Other' ? ` relevant to ${businessType.toLowerCase()} businesses` : ''}
-4. Recommends practical tools or platforms they could try${businessType && businessType !== 'Other' ? `, with preference for solutions commonly used in ${businessType.toLowerCase()}` : ''}
+3. For each category, explains what the score means and offers 2–3 specific improvement suggestions
+4. Recommends practical tools or platforms they could try
 5. Maintains an encouraging, supportive tone throughout
 
 End with a paragraph explaining how Nomadic Liberty, the consultancy that provided this audit, can help implement these improvements with hands-on support tailored to their specific needs and comfort level.
+
 
 CRITICAL FORMATTING REQUIREMENTS:
 - This is an analytical report, NOT a letter or email
@@ -503,36 +490,6 @@ CRITICAL FORMATTING REQUIREMENTS:
 - Keep the tone collaborative and helpful, not expert or authoritative
 - Present as a direct business analysis without any personal communication formatting
 `;
-}
-
-function getIndustrySpecificContext(businessType: string): string {
-  const industryContexts: Record<string, string> = {
-    'Healthcare': `
-INDUSTRY CONTEXT: Healthcare practices have unique automation opportunities around patient scheduling, insurance verification, billing workflows, and compliance documentation. Consider HIPAA compliance requirements when suggesting any patient data handling solutions.`,
-    
-    'E-commerce': `
-INDUSTRY CONTEXT: E-commerce businesses benefit greatly from automating inventory management, order processing, customer service responses, and marketing campaigns. Focus on solutions that can handle high transaction volumes and integrate with popular platforms.`,
-    
-    'Professional Services': `
-INDUSTRY CONTEXT: Professional service firms typically need automation for client onboarding, project management, time tracking, invoicing, and proposal generation. Emphasize solutions that maintain the personal touch clients expect.`,
-    
-    'Manufacturing': `
-INDUSTRY CONTEXT: Manufacturing operations can automate supply chain management, quality control documentation, maintenance scheduling, and production reporting. Consider solutions that integrate with existing equipment and ERP systems.`,
-    
-    'Real Estate': `
-INDUSTRY CONTEXT: Real estate professionals benefit from automating lead follow-up, property listing management, client communication, document preparation, and transaction tracking. Focus on CRM integration and mobile-friendly solutions.`,
-    
-    'Legal': `
-INDUSTRY CONTEXT: Legal practices can automate document assembly, time tracking, client intake, case management, and billing processes. Ensure any recommendations consider attorney-client privilege and regulatory compliance requirements.`,
-    
-    'Retail': `
-INDUSTRY CONTEXT: Retail businesses need automation for inventory tracking, customer communications, loyalty programs, staff scheduling, and sales reporting. Consider solutions that work across multiple sales channels.`,
-    
-    'Construction': `
-INDUSTRY CONTEXT: Construction companies benefit from automating project scheduling, materials ordering, progress reporting, safety documentation, and client communications. Focus on mobile-friendly solutions for field work.`
-  };
-
-  return industryContexts[businessType] || '';
 }
 
 const PORT = process.env.PORT || 3001;
