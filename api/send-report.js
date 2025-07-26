@@ -1,7 +1,55 @@
 // api/send-report.js
+
+// Simple rate limiting store (shared with other API)
+const rateLimitStore = new Map();
+
+// Input validation
+function validateEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return email && typeof email === 'string' && emailRegex.test(email) && email.length <= 100;
+}
+
+function validateInput(text, maxLength = 500) {
+  if (!text || typeof text !== 'string') return true; // Optional fields
+  if (text.length > maxLength) return false;
+  if (/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi.test(text)) return false;
+  return true;
+}
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000; // 15 minutes
+  const maxRequests = 5; // 5 emails per 15 minutes (stricter than AI)
+  
+  const userRequests = rateLimitStore.get(ip) || [];
+  const recentRequests = userRequests.filter(time => now - time < windowMs);
+  
+  if (recentRequests.length >= maxRequests) {
+    return false;
+  }
+  
+  recentRequests.push(now);
+  rateLimitStore.set(ip, recentRequests);
+  return true;
+}
+
 export default async function handler(req, res) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Rate limiting
+  const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
+  if (!checkRateLimit(clientIP)) {
+    return res.status(429).json({ error: 'Too many email requests. Please try again later.' });
+  }
+
+  // CORS - restrict to your domains
+  const allowedOrigins = [
+    'https://audit.nomadicliberty.com',
+    'http://localhost:8080',
+    'http://localhost:3000'
+  ];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -13,10 +61,29 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Request size check
+  const requestSize = JSON.stringify(req.body).length;
+  if (requestSize > 50000) { // 50KB limit for emails with reports
+    return res.status(413).json({ error: 'Request too large' });
+  }
+
   const { userEmail, userName, report, painPoint, techReadiness } = req.body;
 
-  if (!userEmail || !report) {
-    return res.status(400).json({ error: 'Missing required fields' });
+  // Input validation
+  if (!validateEmail(userEmail)) {
+    return res.status(400).json({ error: 'Invalid email address' });
+  }
+  if (userName && !validateInput(userName, 100)) {
+    return res.status(400).json({ error: 'Invalid name input' });
+  }
+  if (painPoint && !validateInput(painPoint)) {
+    return res.status(400).json({ error: 'Invalid pain point input' });
+  }
+  if (techReadiness && !validateInput(techReadiness)) {
+    return res.status(400).json({ error: 'Invalid tech readiness input' });
+  }
+  if (!report || typeof report !== 'object') {
+    return res.status(400).json({ error: 'Invalid report data' });
   }
 
   // Check for Resend API key

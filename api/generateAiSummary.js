@@ -1,10 +1,54 @@
 // api/generateAiSummary.js
+
+// Simple rate limiting store (in production, use Redis)
+const rateLimitStore = new Map();
+
+// Input validation
+function validateInput(text, maxLength = 500) {
+  if (!text || typeof text !== 'string') return false;
+  if (text.length > maxLength) return false;
+  // Check for script tags and other XSS patterns
+  if (/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi.test(text)) return false;
+  return true;
+}
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000; // 15 minutes
+  const maxRequests = 10; // 10 requests per 15 minutes
+  
+  const userRequests = rateLimitStore.get(ip) || [];
+  const recentRequests = userRequests.filter(time => now - time < windowMs);
+  
+  if (recentRequests.length >= maxRequests) {
+    return false;
+  }
+  
+  recentRequests.push(now);
+  rateLimitStore.set(ip, recentRequests);
+  return true;
+}
+
 export default async function handler(req, res) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Rate limiting
+  const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
+  if (!checkRateLimit(clientIP)) {
+    return res.status(429).json({ error: 'Too many requests. Please try again later.' });
+  }
+
+  // CORS - restrict to your domains
+  const allowedOrigins = [
+    'https://audit.nomadicliberty.com',
+    'http://localhost:8080',
+    'http://localhost:3000'
+  ];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-console.log("📥 Incoming method:", req.method); // 👈 Add this line
+  
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -13,20 +57,34 @@ console.log("📥 Incoming method:", req.method); // 👈 Add this line
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Request size check
+  const requestSize = JSON.stringify(req.body).length;
+  if (requestSize > 10000) { // 10KB limit
+    return res.status(413).json({ error: 'Request too large' });
+  }
+
   const { scores, keyChallenge = 'workflow efficiency', techReadiness, painPoint, businessType, teamSize } = req.body;
 
-  console.log('🤖 Received AI summary request with data:', {
-    scores: scores ? 'present' : 'missing',
-    keyChallenge,
-    techReadiness: techReadiness ? 'present' : 'not provided',
-    painPoint: painPoint ? 'present' : 'not provided',
-    businessType: businessType || 'not provided',
-    teamSize: teamSize || 'not provided'
-  });
+  // Input validation
+  if (keyChallenge && !validateInput(keyChallenge)) {
+    return res.status(400).json({ error: 'Invalid key challenge input' });
+  }
+  if (techReadiness && !validateInput(techReadiness)) {
+    return res.status(400).json({ error: 'Invalid tech readiness input' });
+  }
+  if (painPoint && !validateInput(painPoint)) {
+    return res.status(400).json({ error: 'Invalid pain point input' });
+  }
+  if (businessType && !validateInput(businessType, 100)) {
+    return res.status(400).json({ error: 'Invalid business type input' });
+  }
+  if (teamSize && !validateInput(teamSize, 50)) {
+    return res.status(400).json({ error: 'Invalid team size input' });
+  }
 
-  if (!scores || !scores.byCategory) {
-    console.error('❌ Missing scores data in request');
-    return res.status(400).json({ error: 'Missing scores data' });
+  // Validate scores structure
+  if (!scores || !scores.byCategory || typeof scores.overall !== 'number') {
+    return res.status(400).json({ error: 'Invalid scores data' });
   }
 
   const prompt = buildPrompt(scores, keyChallenge, techReadiness, painPoint, businessType, teamSize);
