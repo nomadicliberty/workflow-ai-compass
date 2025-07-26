@@ -1,5 +1,5 @@
 import { body, validationResult } from 'express-validator';
-import type { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 
 export const validateEmailRequest = [
   body('userEmail').isEmail().normalizeEmail(),
@@ -7,7 +7,7 @@ export const validateEmailRequest = [
   body('painPoint').optional().isLength({ max: 500 }).trim().escape(),
   body('techReadiness').optional().isLength({ max: 500 }).trim().escape(),
   body('report').notEmpty().withMessage('Report is required'),
-  (req: Request, res: Response, next: any) => {
+  (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ error: 'Invalid input data', details: errors.array() });
@@ -23,7 +23,7 @@ export const validateAIRequest = [
   body('painPoint').optional().isLength({ max: 500 }).trim().escape(),
   body('businessType').optional().isLength({ max: 100 }).trim().escape(),
   body('teamSize').optional().isLength({ max: 100 }).trim().escape(),
-  (req: Request, res: Response, next: any) => {
+  (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ error: 'Invalid input data', details: errors.array() });
