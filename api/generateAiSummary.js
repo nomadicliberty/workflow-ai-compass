@@ -88,10 +88,8 @@ export default async function handler(req, res) {
   }
 
   const prompt = buildPrompt(scores, keyChallenge, techReadiness, painPoint, businessType, teamSize);
-  console.log('📝 Generated prompt length:', prompt.length);
 
   try {
-    console.log('🚀 Calling OpenAI API...');
     const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -107,16 +105,16 @@ export default async function handler(req, res) {
 
     if (!openaiResponse.ok) {
       const err = await openaiResponse.json();
-      console.error("❌ OpenAI error:", err);
+      // Log error code only, not full error details
+      console.error("OpenAI API error:", openaiResponse.status);
       return res.status(500).json({ error: 'Failed to get summary from GPT' });
     }
 
     const json = await openaiResponse.json();
     const summary = json.choices?.[0]?.message?.content || 'No summary returned.';
-    console.log('✅ OpenAI response received, summary length:', summary.length);
     return res.json({ summary });
   } catch (error) {
-    console.error("❌ GPT error:", error);
+    console.error("API processing error:", error.message);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

@@ -93,11 +93,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Email service configuration error' });
   }
 
-  console.log('📧 Preparing to send email with Resend API...');
-  console.log('- User email:', userEmail);
-  console.log('- User name:', userName || 'Not provided');
-  console.log('- Has AI summary:', !!report.aiGeneratedSummary);
-  console.log('- API key length:', resendApiKey.length);
+  // Email sending in progress - no user data logged for privacy
 
   const customerEmailHtml = generateReportHtml(report, painPoint, techReadiness);
   const adminEmailHtml = generateAdminReportHtml(userEmail, userName, report, painPoint, techReadiness);
@@ -135,21 +131,21 @@ export default async function handler(req, res) {
 
     if (!customerResponse.ok) {
       const error = await customerResponse.json();
-      console.error('❌ Customer email error:', error);
+      console.error('Customer email error:', error.message);
       return res.status(500).json({ error: 'Failed to send customer email' });
     }
 
     if (!adminResponse.ok) {
       const error = await adminResponse.json();
-      console.error('❌ Admin email error:', error);
+      console.error('Admin email error:', error.message);
       // Continue even if admin email fails
     }
 
     const result = await customerResponse.json();
-    console.log('✅ Emails sent successfully:', result);
+    // Emails sent successfully
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.error('❌ Server error sending email:', err);
+    console.error('Server error sending email:', err.message);
     return res.status(500).json({ error: 'Server error' });
   }
 }
