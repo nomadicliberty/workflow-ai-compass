@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { CircleDot, Sparkles } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { marked } from 'marked';
 
 export class ReactRenderer extends BaseRenderer {
   renderHeader(section: ReportSection): React.ReactElement {
@@ -41,8 +42,8 @@ export class ReactRenderer extends BaseRenderer {
           <CardContent>
             <div className="prose prose-gray max-w-none">
               <div 
-                className="text-nomadic-gray leading-relaxed whitespace-pre-line"
-                dangerouslySetInnerHTML={{ __html: section.content.text.replace(/\n/g, '<br>') }}
+                className="text-nomadic-gray leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: marked(section.content.text) }}
               />
             </div>
           </CardContent>
