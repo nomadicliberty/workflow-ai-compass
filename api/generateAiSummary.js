@@ -86,8 +86,12 @@ export default async function handler(req, res) {
           { role: "system", content: "You are a professional AI consultant writing a clear, well-structured audit report. Be concise and direct." },
           { role: "user", content: prompt }
         ],
-        verbosity: "low",
-        reasoning_effort: "minimal"
+        text: {
+          verbosity: "low"
+        },
+        reasoning: {
+          effort: "minimal"
+        }
       })
     });
 
