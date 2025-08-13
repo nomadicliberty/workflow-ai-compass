@@ -128,7 +128,7 @@ export class ErrorHandler {
   }
 
   // Silent error logging for non-critical errors
-  static logError(error: Error, context: string): void {
+  static logSilentError(error: Error, context: string): void {
     const appError: AppError = {
       code: context.toUpperCase(),
       message: error.message,
