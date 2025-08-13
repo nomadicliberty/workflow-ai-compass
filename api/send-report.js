@@ -1,4 +1,5 @@
 // api/send-report.js
+import { marked } from 'marked';
 
 // Simple rate limiting store (shared with other API)
 const rateLimitStore = new Map();
@@ -160,7 +161,7 @@ const generateReportHtml = (
     <div class="section">
       <h2>✨ AI-Generated Insights</h2>
       <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #00A8A8;">
-        <p style="white-space: pre-line; line-height: 1.6;">${report.aiGeneratedSummary}</p>
+        <div style="line-height: 1.6;">${marked(report.aiGeneratedSummary)}</div>
       </div>
     </div>
   ` : '';
@@ -314,7 +315,7 @@ const generateAdminReportHtml = (
       <div class="section">
         <h2>AI-Generated Summary</h2>
         <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
-          <p style="white-space: pre-line;">${report.aiGeneratedSummary}</p>
+          <div>${marked(report.aiGeneratedSummary)}</div>
         </div>
       </div>
       ` : ''}

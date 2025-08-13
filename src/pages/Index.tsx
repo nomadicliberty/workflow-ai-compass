@@ -20,7 +20,7 @@ const Index = () => {
             </h1>
             <div className="flex items-center space-x-2 sm:space-x-4">
               <div className="hidden lg:block text-sm text-gray-600">
-                For Small Business Owners
+                For Business Owners
               </div>
               <Button 
                 variant="outline" 
@@ -47,7 +47,7 @@ const Index = () => {
                 <span className="text-nomadic-teal mr-2">Workflow</span> AI Audit
               </h2>
               <p className="text-sm text-gray-500 mt-1">
-                Helping small businesses save time with AI & automation
+                Helping businesses save time with AI & automation
               </p>
             </div>
             <div className="text-sm text-gray-500">
