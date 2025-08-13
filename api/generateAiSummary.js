@@ -36,7 +36,7 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: 'Too many requests. Please try again later.' });
   }
 
-  // CORS - restrict to your domains
+  // CORS
   const allowedOrigins = [
     'https://audit.nomadicliberty.com',
     'http://localhost:8080',
@@ -49,40 +49,24 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   // Request size check
   const requestSize = JSON.stringify(req.body).length;
-  if (requestSize > 10000) { // 10KB limit
+  if (requestSize > 10000) {
     return res.status(413).json({ error: 'Request too large' });
   }
 
   const { scores, keyChallenge = 'workflow efficiency', techReadiness, painPoint, businessType, teamSize } = req.body;
 
   // Input validation
-  if (keyChallenge && !validateInput(keyChallenge)) {
-    return res.status(400).json({ error: 'Invalid key challenge input' });
-  }
-  if (techReadiness && !validateInput(techReadiness)) {
-    return res.status(400).json({ error: 'Invalid tech readiness input' });
-  }
-  if (painPoint && !validateInput(painPoint)) {
-    return res.status(400).json({ error: 'Invalid pain point input' });
-  }
-  if (businessType && !validateInput(businessType, 100)) {
-    return res.status(400).json({ error: 'Invalid business type input' });
-  }
-  if (teamSize && !validateInput(teamSize, 50)) {
-    return res.status(400).json({ error: 'Invalid team size input' });
-  }
+  if (keyChallenge && !validateInput(keyChallenge)) return res.status(400).json({ error: 'Invalid key challenge input' });
+  if (techReadiness && !validateInput(techReadiness)) return res.status(400).json({ error: 'Invalid tech readiness input' });
+  if (painPoint && !validateInput(painPoint)) return res.status(400).json({ error: 'Invalid pain point input' });
+  if (businessType && !validateInput(businessType, 100)) return res.status(400).json({ error: 'Invalid business type input' });
+  if (teamSize && !validateInput(teamSize, 50)) return res.status(400).json({ error: 'Invalid team size input' });
 
-  // Validate scores structure
   if (!scores || !scores.byCategory || typeof scores.overall !== 'number') {
     return res.status(400).json({ error: 'Invalid scores data' });
   }
@@ -101,25 +85,38 @@ export default async function handler(req, res) {
         input: [
           { role: "system", content: "You are a professional AI consultant writing a clear, well-structured audit report." },
           { role: "user", content: prompt }
-        ],
-        temperature: 0.7
+        ]
       })
     });
 
     if (!openaiResponse.ok) {
       const errorText = await openaiResponse.text();
-      console.error("OpenAI API error:", openaiResponse.status, errorText);
+      console.error("❌ OpenAI API error:", openaiResponse.status, errorText);
+
+      if (process.env.NODE_ENV !== 'production') {
+        return res.status(500).json({ error: errorText });
+      }
       return res.status(500).json({ error: 'Failed to get summary from GPT' });
     }
 
     const data = await openaiResponse.json();
-    const summary = data.output_text || 'No summary returned.';
-    
-    console.log("Generated audit report:", summary);
+    console.log("✅ Raw OpenAI API response:", JSON.stringify(data, null, 2));
+
+    const summary =
+      data.output_text ||
+      data.output?.[1]?.content?.[0]?.text ||
+      data.output?.[0]?.content?.[0]?.text ||
+      'No summary returned.';
+
+    console.log("📄 Generated audit report:", summary);
+
     return res.json({ summary });
+
   } catch (error) {
-    console.error("API processing error:", error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error("💥 API processing error:", error);
+    return res.status(500).json({
+      error: process.env.NODE_ENV !== 'production' ? error.message : 'Internal server error'
+    });
   }
 }
 
