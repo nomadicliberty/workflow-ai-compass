@@ -90,28 +90,32 @@ export default async function handler(req, res) {
   const prompt = buildPrompt(scores, keyChallenge, techReadiness, painPoint, businessType, teamSize);
 
   try {
-    const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+    const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY?.trim()}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
+        model: "gpt-5-mini",
+        input: [
+          { role: "system", content: "You are a professional AI consultant writing a clear, well-structured audit report." },
+          { role: "user", content: prompt }
+        ],
         temperature: 0.7
       })
     });
 
     if (!openaiResponse.ok) {
-      const err = await openaiResponse.json();
-      // Log error code only, not full error details
-      console.error("OpenAI API error:", openaiResponse.status);
+      const errorText = await openaiResponse.text();
+      console.error("OpenAI API error:", openaiResponse.status, errorText);
       return res.status(500).json({ error: 'Failed to get summary from GPT' });
     }
 
-    const json = await openaiResponse.json();
-    const summary = json.choices?.[0]?.message?.content || 'No summary returned.';
+    const data = await openaiResponse.json();
+    const summary = data.output_text || 'No summary returned.';
+    
+    console.log("Generated audit report:", summary);
     return res.json({ summary });
   } catch (error) {
     console.error("API processing error:", error.message);
