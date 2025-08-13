@@ -87,10 +87,10 @@ export default async function handler(req, res) {
           { role: "user", content: prompt }
         ],
         text: {
-          verbosity: "low"
+          verbosity: "medium"
         },
         reasoning: {
-          effort: "minimal"
+          effort: "medium"
         }
       })
     });
@@ -159,7 +159,7 @@ function buildPrompt(scores, keyChallenge, techReadiness, painPoint, businessTyp
   }
 
   return `
-Generate a concise, well-formatted workflow automation report for a business owner.
+You are a strategic automation consultant creating a professional workflow assessment report for a business owner.
 
 Context:
 ${personalContext}Overall automation score: ${overall}/100
@@ -170,30 +170,31 @@ ${categories}
 
 ${industryContext}
 
-Requirements:
-- Write a CONCISE report (max 800 words)
-- Address their main challenge: "${challenge}"
-- ${techReadiness ? `Consider their tech comfort level: ${techReadiness}` : 'Use simple, accessible language'}
-- Use clear headings and bullet points for readability
-- Focus on 1-2 actionable recommendations per category, not exhaustive lists
-- Avoid lengthy explanations - be direct and practical
+Approach:
+- Act as a knowledgeable consultant providing strategic insights
+- Address their main challenge: "${challenge}" with thoughtful analysis
+- ${techReadiness ? `Consider their team's technology readiness: ${techReadiness}` : 'Use accessible, professional language'}
+- Provide clear, actionable recommendations with business rationale
+- Balance conciseness with strategic depth
+- Use descriptive labels for opportunity areas (e.g., "Critical Gap", "Quick Wins Available")
 
 Format:
 ## Executive Summary
-Brief overview addressing their challenge and potential savings.
+Strategic overview addressing their challenge, current state, and transformation potential.
 
 ## Key Opportunities
-For each category with scores under 70, provide:
-- **Category Name (Score/100)**: What this means in 1 sentence
-- Quick recommendations (2-3 bullet points max)
+For each category scoring under 70:
+- **Category Name (Score/100): Descriptive Label**
+- Brief explanation of what this means for their business
+- 2-3 strategic recommendations with business impact rationale
 
 ## Implementation Approach
-Brief paragraph on getting started based on their tech readiness.
+Thoughtful paragraph on phased rollout strategy considering their tech readiness and organizational dynamics.
 
 ## How Nomadic Liberty Can Help
-One paragraph explaining our hands-on support approach.
+Consultative paragraph explaining our comprehensive support approach and methodology.
 
-Keep it scannable, professional, and actionable. Avoid verbose explanations.
+Write as a strategic partner, not just a tool recommender. Focus on business outcomes and transformation.
 `;
 }
 
