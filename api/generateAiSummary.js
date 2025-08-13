@@ -83,9 +83,11 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "gpt-5-mini",
         input: [
-          { role: "system", content: "You are a professional AI consultant writing a clear, well-structured audit report." },
+          { role: "system", content: "You are a professional AI consultant writing a clear, well-structured audit report. Be concise and direct." },
           { role: "user", content: prompt }
-        ]
+        ],
+        verbosity: "low",
+        reasoning_effort: "minimal"
       })
     });
 
@@ -153,34 +155,41 @@ function buildPrompt(scores, keyChallenge, techReadiness, painPoint, businessTyp
   }
 
   return `
-You are an AI automation consultant generating a friendly, human-readable report for a small business owner who just completed a workflow audit.
+Generate a concise, well-formatted workflow automation report for a business owner.
 
-${personalContext}Their overall automation score is ${overall}/100  
-They could save about ${totalTimeSavings} hours per week with improvements.
+Context:
+${personalContext}Overall automation score: ${overall}/100
+Potential time savings: ${totalTimeSavings} hours per week
 
-Category breakdown:
+Category scores:
 ${categories}
 
 ${industryContext}
 
-Please write a comprehensive, personalized report that:
+Requirements:
+- Write a CONCISE report (max 800 words)
+- Address their main challenge: "${challenge}"
+- ${techReadiness ? `Consider their tech comfort level: ${techReadiness}` : 'Use simple, accessible language'}
+- Use clear headings and bullet points for readability
+- Focus on 1-2 actionable recommendations per category, not exhaustive lists
+- Avoid lengthy explanations - be direct and practical
 
-1. Addresses their specific challenge ("${challenge}") in the opening${businessType && businessType !== 'Other' ? ` within the context of the ${businessType.toLowerCase()} industry` : ''}
-2. ${techReadiness ? `Considers their team's technology comfort level (${techReadiness}) when making recommendations` : 'Uses accessible, non-technical language'}
-3. For each category, explains what the score means and offers 2–3 specific improvement suggestions${businessType && businessType !== 'Other' ? ` relevant to ${businessType.toLowerCase()} businesses` : ''}
-4. Recommends practical tools or platforms they could try${businessType && businessType !== 'Other' ? `, with preference for solutions commonly used in ${businessType.toLowerCase()}` : ''}
-5. Maintains an encouraging, supportive tone throughout
+Format:
+## Executive Summary
+Brief overview addressing their challenge and potential savings.
 
-End with a paragraph explaining how Nomadic Liberty, the consultancy that provided this audit, can help implement these improvements with hands-on support tailored to their specific needs and comfort level.
+## Key Opportunities
+For each category with scores under 70, provide:
+- **Category Name (Score/100)**: What this means in 1 sentence
+- Quick recommendations (2-3 bullet points max)
 
-CRITICAL FORMATTING REQUIREMENTS:
-- This is an analytical report, NOT a letter or email
-- Start directly with analysis content - no greetings like "Dear Business Owner" or "Hello"
-- End with the Nomadic Liberty paragraph - no sign-offs like "Best regards" or "Sincerely"
-- Use educational language like 'areas to explore' and 'you might consider' rather than prescriptive recommendations
-- Avoid listing specific software tool names
-- Keep the tone collaborative and helpful, not expert or authoritative
-- Present as a direct business analysis without any personal communication formatting
+## Implementation Approach
+Brief paragraph on getting started based on their tech readiness.
+
+## How Nomadic Liberty Can Help
+One paragraph explaining our hands-on support approach.
+
+Keep it scannable, professional, and actionable. Avoid verbose explanations.
 `;
 }
 
