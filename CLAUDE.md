@@ -18,7 +18,7 @@ For full local development with API functionality:
 2. **Terminal 2**: Run `npm run dev` (starts frontend on localhost:8080)
 3. Frontend automatically proxies `/api/*` requests to the Vercel dev server
 
-**Environment Variables**: Create `.env.local` file with `OPENAI_API_KEY` for AI functionality
+**Environment Variables**: Create `.env.local` file with `ANTHROPIC_API_KEY` for AI functionality
 
 ### Testing
 This project does not currently have a test suite configured. Any testing setup would need to be added.
@@ -32,6 +32,7 @@ This project does not currently have a test suite configured. Any testing setup 
 - **Routing**: React Router v6
 - **PDF Generation**: jsPDF + jsPDF-autotable
 - **Backend API**: Vercel serverless functions
+- **AI Integration**: Anthropic Claude Sonnet 4 via official SDK
 
 ### Project Structure
 
@@ -41,7 +42,7 @@ This is a workflow automation audit tool that helps small businesses assess thei
 1. **Welcome Screen** - Introduction and audit start
 2. **Audit Wizard** - Multi-step questionnaire covering different workflow categories
 3. **Email Collection** - User contact information for report delivery
-4. **AI Report Generation** - Server-side OpenAI integration for personalized recommendations
+4. **AI Report Generation** - Server-side Claude Sonnet 4 integration for personalized recommendations
 5. **Report View** - Interactive report with export capabilities (PDF/Email)
 
 #### Key Domain Models
@@ -85,7 +86,7 @@ The audit evaluates businesses across these workflow areas:
 
 #### API Integration
 - **Vercel Functions**: Located in `/api/` directory
-- `api/generateAiSummary.js` - OpenAI integration for personalized recommendations
+- `api/generateAiSummary.js` - Claude Sonnet 4 integration for personalized recommendations
 - `api/send-report.js` - Email delivery service
 - CORS-enabled for cross-origin requests
 
@@ -109,7 +110,7 @@ The audit evaluates businesses across these workflow areas:
 1. **Question Definition**: Static question data in `src/data/questions.ts`
 2. **Answer Collection**: User responses stored in wizard state
 3. **Score Calculation**: Local scoring algorithms generate category assessments
-4. **AI Enhancement**: Server-side OpenAI API adds personalized insights
+4. **AI Enhancement**: Server-side Claude Sonnet 4 API adds personalized insights
 5. **Report Generation**: Combined local + AI data creates final report
 6. **Export Options**: PDF generation and email delivery
 
@@ -127,11 +128,12 @@ The audit evaluates businesses across these workflow areas:
 
 ### Current Development Status
 - Core audit wizard functionality complete
-- AI report generation integrated
+- **Claude Sonnet 4 AI integration**: Fully migrated from OpenAI GPT-5 with enhanced quality
 - PDF export working
 - Email delivery functional
 - Mobile-responsive design implemented
 - Error handling and validation in place
+- **Browser markdown rendering**: Fixed formatting to match email quality with proper bullets, bold text, and hierarchy
 
 ### Development Workflow
 This project integrates with Lovable.dev for collaborative development:
@@ -146,12 +148,53 @@ This project integrates with Lovable.dev for collaborative development:
 - API functions in `/api/` folder are automatically detected and deployed
 
 ### Security Features
-- **Rate limiting**: 10 AI requests, 5 email requests per 15 minutes per IP
+- **Rate limiting**: 10 AI requests per hour, 5 email requests per 15 minutes per IP
 - **Input validation**: XSS protection, length limits, type checking on all user inputs
 - **CORS protection**: Restricted to specific domains (`audit.nomadicliberty.com`, localhost)
 - **Request size limits**: 10KB for AI, 50KB for email endpoints
 - **Privacy compliance**: No user PII logged in production
 - **Fallback system**: Generates reports even when AI service fails
+
+### AI Integration: Claude Sonnet 4 Migration
+
+**Successfully migrated from OpenAI GPT-5 to Anthropic Claude Sonnet 4 (August 2025)**
+
+#### Migration Details:
+- **Model**: `claude-sonnet-4-20250514` (latest stable release)
+- **SDK**: `@anthropic-ai/sdk` v0.60.0
+- **API Endpoint**: `https://api.anthropic.com/v1/messages`
+- **Rate Limiting**: 10 requests per hour (cost control)
+- **Environment Variable**: `ANTHROPIC_API_KEY`
+
+#### Quality Improvements:
+- **Superior writing quality**: More consultative, professional tone
+- **Better formatting**: Clean markdown with proper headings, bullets, and hierarchy
+- **Consistent structure**: Well-organized sections with clear implementation guidance
+- **Business focus**: Strategic recommendations with business impact rationale
+
+#### Technical Implementation:
+```javascript
+// Claude API Integration
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY?.trim(),
+});
+
+const message = await anthropic.messages.create({
+  model: "claude-sonnet-4-20250514",
+  max_tokens: 1024,
+  system: "You are a professional AI consultant writing a clear, well-structured audit report. Be concise and direct.",
+  messages: [{ role: "user", content: prompt }]
+});
+
+const summary = message.content?.[0]?.text || 'No summary returned.';
+```
+
+#### Browser Rendering Fix:
+Enhanced CSS classes in `ReactRenderer.tsx` to properly display Claude's markdown:
+- Bullet points: `[&_ul]:list-disc [&_ul]:pl-6`
+- Bold text: `[&_strong]:font-bold`  
+- Headings: `[&_h2]:text-xl [&_h2]:font-bold`
+- Spacing: `[&_li]:mb-1 [&_p]:mb-3`
 
 ### Known Issues & Solutions
 - **PDF formatting**: Screen and email reports work perfectly; PDF has minor styling issues (acceptable for MVP)
