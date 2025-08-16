@@ -40,9 +40,9 @@ export class ReactRenderer extends BaseRenderer {
             )}
           </CardHeader>
           <CardContent>
-            <div className="prose prose-gray max-w-none">
+            <div className="prose prose-gray max-w-none prose-ul:list-disc prose-ul:pl-6 prose-li:mb-1 prose-strong:font-bold prose-h2:text-xl prose-h2:font-bold prose-h2:mb-4 prose-h3:text-lg prose-h3:font-semibold prose-h3:mb-3 prose-p:mb-3">
               <div 
-                className="text-nomadic-gray leading-relaxed"
+                className="text-nomadic-gray leading-relaxed [&_ul]:list-disc [&_ul]:pl-6 [&_li]:mb-1 [&_strong]:font-bold [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mb-4 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-3 [&_p]:mb-3"
                 dangerouslySetInnerHTML={{ __html: marked(section.content.text) }}
               />
             </div>
