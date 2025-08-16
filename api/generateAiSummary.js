@@ -1,5 +1,7 @@
 // api/generateAiSummary.js
 
+import Anthropic from '@anthropic-ai/sdk';
+
 // Simple rate limiting store (in production, use Redis)
 const rateLimitStore = new Map();
 
@@ -12,10 +14,11 @@ function validateInput(text, maxLength = 500) {
   return true;
 }
 
+// Updated rate limiting: 10 requests per hour instead of 15 minutes
 function checkRateLimit(ip) {
   const now = Date.now();
-  const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxRequests = 10; // 10 requests per 15 minutes
+  const windowMs = 60 * 60 * 1000; // 1 hour
+  const maxRequests = 10; // 10 requests per hour
   
   const userRequests = rateLimitStore.get(ip) || [];
   const recentRequests = userRequests.filter(time => now - time < windowMs);
@@ -33,7 +36,9 @@ export default async function handler(req, res) {
   // Rate limiting
   const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
   if (!checkRateLimit(clientIP)) {
-    return res.status(429).json({ error: 'Too many requests. Please try again later.' });
+    return res.status(429).json({ 
+      error: 'Rate limit exceeded. You can generate up to 10 AI reports per hour. Please try again later.' 
+    });
   }
 
   // CORS
@@ -74,45 +79,28 @@ export default async function handler(req, res) {
   const prompt = buildPrompt(scores, keyChallenge, techReadiness, painPoint, businessType, teamSize);
 
   try {
-    const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY?.trim()}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-5-mini",
-        input: [
-          { role: "system", content: "You are a professional AI consultant writing a clear, well-structured audit report. Be concise and direct." },
-          { role: "user", content: prompt }
-        ],
-        text: {
-          verbosity: "low"
-        },
-        reasoning: {
-          effort: "medium"
-        }
-      })
+    // Initialize Anthropic client
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY?.trim(),
     });
 
-    if (!openaiResponse.ok) {
-      const errorText = await openaiResponse.text();
-      console.error("❌ OpenAI API error:", openaiResponse.status, errorText);
+    // Claude API call
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1024,
+      system: "You are a professional AI consultant writing a clear, well-structured audit report. Be concise and direct.",
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ]
+    });
 
-      if (process.env.NODE_ENV !== 'production') {
-        return res.status(500).json({ error: errorText });
-      }
-      return res.status(500).json({ error: 'Failed to get summary from GPT' });
-    }
+    console.log("✅ Raw Claude API response:", JSON.stringify(message, null, 2));
 
-    const data = await openaiResponse.json();
-    console.log("✅ Raw OpenAI API response:", JSON.stringify(data, null, 2));
-
-    const summary =
-      data.output_text ||
-      data.output?.[1]?.content?.[0]?.text ||
-      data.output?.[0]?.content?.[0]?.text ||
-      'No summary returned.';
+    // Extract content from Claude response
+    const summary = message.content?.[0]?.text || 'No summary returned.';
 
     console.log("📄 Generated audit report:", summary);
 
@@ -120,8 +108,24 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("💥 API processing error:", error);
-    return res.status(500).json({
-      error: process.env.NODE_ENV !== 'production' ? error.message : 'Internal server error'
+    
+    // Enhanced error handling for Claude-specific errors
+    let errorMessage = 'Internal server error';
+    
+    if (error.status === 400) {
+      errorMessage = 'Invalid request format';
+    } else if (error.status === 401) {
+      errorMessage = 'Authentication failed';
+    } else if (error.status === 403) {
+      errorMessage = 'Request forbidden';
+    } else if (error.status === 429) {
+      errorMessage = 'Claude API rate limit exceeded';
+    } else if (error.status === 500) {
+      errorMessage = 'Claude API server error';
+    }
+
+    return res.status(error.status || 500).json({
+      error: process.env.NODE_ENV !== 'production' ? error.message : errorMessage
     });
   }
 }
